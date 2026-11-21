@@ -30,21 +30,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
-import com.google.android.play.core.review.ReviewManagerFactory
 import com.ivy.IvyNavGraph
-import com.ivy.base.legacy.Theme
 import com.ivy.base.time.TimeConverter
 import com.ivy.base.time.TimeProvider
-import com.ivy.design.api.IvyDesign
 import com.ivy.design.api.IvyUI
 import com.ivy.design.system.IvyMaterial3Theme
 import com.ivy.domain.RootScreen
-import com.ivy.home.customerjourney.CustomerJourneyCardsProvider
+import com.ivy.domain.theming.AppTheme
 import com.ivy.legacy.Constants
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.appDesign
 import com.ivy.legacy.utils.activityForResultLauncher
-import com.ivy.legacy.utils.sendToCrashlytics
 import com.ivy.legacy.utils.simpleActivityForResultLauncher
 import com.ivy.navigation.Navigation
 import com.ivy.navigation.NavigationRoot
@@ -56,6 +52,7 @@ import com.ivy.widget.balance.WalletBalanceWidgetReceiver
 import com.ivy.widget.transaction.AddTransactionWidget
 import com.ivy.widget.transaction.AddTransactionWidgetCompact
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
@@ -68,9 +65,6 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     @Inject
     lateinit var navigation: Navigation
-
-    @Inject
-    lateinit var customerJourneyLogic: CustomerJourneyCardsProvider
 
     @Inject
     lateinit var timeConverter: TimeConverter
@@ -100,6 +94,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
         setContent {
             val viewModel: RootViewModel = viewModel()
             val isSystemInDarkTheme = isSystemInDarkTheme()
+            val appTheme by viewModel.appTheme.collectAsState()
 
             LaunchedEffect(isSystemInDarkTheme) {
                 viewModel.start(isSystemInDarkTheme, intent)
@@ -112,6 +107,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
                 true -> {
                     IvyUI(
                         design = appDesign(ivyContext),
+                        appTheme = appTheme,
                         timeConverter = timeConverter,
                         timeProvider = timeProvider,
                         timeFormatter = timeFormatter,
@@ -133,6 +129,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
                     NavigationRoot(navigation = navigation) { screen ->
                         IvyUI(
                             design = appDesign(ivyContext),
+                            appTheme = appTheme,
                             includeSurface = screen?.isLegacy ?: true,
                             timeConverter = timeConverter,
                             timeProvider = timeProvider,
@@ -144,13 +141,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
                 }
             }
 
-            IvyMaterial3Theme(
-                dark = isDarkThemeEnabled(
-                    ivyDesign = appDesign(ivyContext),
-                    systemDarkTheme = isSystemInDarkTheme
-                ),
-                isTrueBlack = appDesign(ivyContext).context().theme == Theme.AMOLED_DARK
-            ) {
+            IvyMaterial3Theme(theme = appTheme) {
                 dateTimePicker.Content()
             }
         }
@@ -252,15 +243,6 @@ class RootActivity : AppCompatActivity(), RootScreen {
                     LocalTime.of(picker.hour, picker.minute).withSecond(0)
                 )
             }
-        }
-    }
-
-    private fun isDarkThemeEnabled(ivyDesign: IvyDesign, systemDarkTheme: Boolean): Boolean {
-        return when (ivyDesign.context().theme) {
-            Theme.LIGHT -> false
-            Theme.DARK -> true
-            Theme.AMOLED_DARK -> true
-            else -> systemDarkTheme
         }
     }
 
@@ -379,8 +361,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
             browserIntent.data = Uri.parse(url)
             startActivity(browserIntent)
         } catch (e: Exception) {
-            e.printStackTrace()
-            e.sendToCrashlytics("Cannot open URL in browser, intent not supported.")
+            Timber.e(e, "Cannot open URL in browser, intent not supported.")
             Toast.makeText(
                 this,
                 "No browser app found. Visit manually: $url",
@@ -445,32 +426,6 @@ class RootActivity : AppCompatActivity(), RootScreen {
         get() = BuildConfig.VERSION_NAME
     override val buildVersionCode: Int
         get() = BuildConfig.VERSION_CODE
-
-    override fun reviewIvyWallet(dismissReviewCard: Boolean) {
-        val manager = ReviewManagerFactory.create(this)
-        val request = manager.requestReviewFlow()
-        request.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                // We got the ReviewInfo object
-                val reviewInfo = task.result
-                reviewInfo.let { review ->
-                    val flow = manager.launchReviewFlow(this, review!!)
-                    flow.addOnCompleteListener {
-                        // The flow has finished. The API does not indicate whether the user
-                        // reviewed or not, or even whether the review dialog was shown. Thus, no
-                        // matter the result, we continue our app flow.
-                        if (dismissReviewCard) {
-                            customerJourneyLogic.dismissCard(CustomerJourneyCardsProvider.rateUsCard())
-                        }
-
-                        openGooglePlayAppPage(packageName)
-                    }
-                }
-            } else {
-                openGooglePlayAppPage(packageName)
-            }
-        }
-    }
 
     override fun <T> pinWidget(widget: Class<T>) {
         val appWidgetManager: AppWidgetManager = this.getSystemService(AppWidgetManager::class.java)

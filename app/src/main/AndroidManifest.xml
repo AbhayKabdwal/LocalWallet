@@ -3,12 +3,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.ivy.wallet">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+         Read-only access to the SMS inbox for the optional "import from messages"
+         feature. Parsing happens entirely on-device and the app declares no
+         INTERNET permission, so nothing can be uploaded. The feature is off by
+         default and the permission is only requested if the user turns it on.
+    -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+         This app makes no network requests, so it declares no INTERNET permission.
+         WorkManager and friends merge ACCESS_NETWORK_STATE in for their own
+         network constraints, which nothing here uses - strip it so the installed
+         APK really does ask for no network access at all.
+    -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -16,8 +33,6 @@
         android:requestLegacyExternalStorage="true" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!--  Show activity over the lockscreen  -->
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
@@ -30,7 +45,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true"
         tools:ignore="LockedOrientationActivity">
 
         <activity

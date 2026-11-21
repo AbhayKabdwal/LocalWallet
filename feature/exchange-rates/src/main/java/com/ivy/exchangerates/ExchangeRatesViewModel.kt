@@ -17,7 +17,6 @@ import com.ivy.data.model.primitive.AssetCode
 import com.ivy.data.model.primitive.PositiveDouble
 import com.ivy.data.repository.CurrencyRepository
 import com.ivy.data.repository.ExchangeRatesRepository
-import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
 import com.ivy.exchangerates.data.RateUi
 import com.ivy.ui.ComposeViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,7 +28,6 @@ import javax.inject.Inject
 @Stable
 @HiltViewModel
 class ExchangeRatesViewModel @Inject constructor(
-    private val syncExchangeRatesUseCase: SyncExchangeRatesUseCase,
     private val currencyRepo: CurrencyRepository,
     private val exchangeRatesRepo: ExchangeRatesRepository,
     private val dispatchers: DispatchersProvider,
@@ -47,11 +45,7 @@ class ExchangeRatesViewModel @Inject constructor(
     @Composable
     override fun uiState(): RatesState {
         LaunchedEffect(Unit) {
-            baseCurrency = currencyRepo.getBaseCurrency().also {
-                viewModelScope.launch {
-                    syncExchangeRatesUseCase.sync(it)
-                }
-            }
+            baseCurrency = currencyRepo.getBaseCurrency()
         }
 
         val rates = getRates()
@@ -96,9 +90,6 @@ class ExchangeRatesViewModel @Inject constructor(
                     baseCurrency = AssetCode.from(event.rate.from).bind(),
                     currency = AssetCode.from(event.rate.to).bind()
                 )
-            }.onRight {
-                // Sync to fetch the real rate
-                baseCurrency?.let { syncExchangeRatesUseCase.sync(it) }
             }.onLeft { toaster.show(it) }
         }
     }

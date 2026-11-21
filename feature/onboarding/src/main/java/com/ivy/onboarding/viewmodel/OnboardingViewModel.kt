@@ -11,7 +11,6 @@ import com.ivy.data.db.dao.read.AccountDao
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.data.db.dao.write.WriteSettingsDao
 import com.ivy.ui.ComposeViewModel
-import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
 import com.ivy.legacy.LogoutLogic
 import com.ivy.data.model.Category
 import com.ivy.data.repository.CategoryRepository
@@ -52,7 +51,6 @@ class OnboardingViewModel @Inject constructor(
     private val accountCreator: AccountCreator,
 
     private val accountsAct: AccountsAct,
-    private val syncExchangeRatesUseCase: SyncExchangeRatesUseCase,
     private val settingsWriter: WriteSettingsDao,
 
     // Only OnboardingRouter stuff
@@ -99,7 +97,6 @@ class OnboardingViewModel @Inject constructor(
         preloadDataLogic = preloadDataLogic,
         transactionReminderLogic = transactionReminderLogic,
         logoutLogic = logoutLogic,
-        syncExchangeRatesUseCase = syncExchangeRatesUseCase,
     )
 
     fun start(screen: OnboardingScreen, isSystemDarkMode: Boolean) {

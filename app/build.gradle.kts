@@ -6,8 +6,6 @@ plugins {
     id("dagger.hilt.android.plugin")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
     id("io.gitlab.arturbosch.detekt")
 }
 
@@ -122,11 +120,11 @@ android {
 }
 
 dependencies {
+    implementation(projects.feature.appearance)
     implementation(projects.feature.attributions)
     implementation(projects.feature.balance)
     implementation(projects.feature.budgets)
     implementation(projects.feature.categories)
-    implementation(projects.feature.contributors)
     implementation(projects.feature.disclaimer)
     implementation(projects.feature.editTransaction)
     implementation(projects.feature.exchangeRates)
@@ -138,14 +136,11 @@ dependencies {
     implementation(projects.feature.onboarding)
     implementation(projects.feature.piechart)
     implementation(projects.feature.plannedPayments)
-    implementation(projects.feature.poll.impl)
-    implementation(projects.feature.poll.public)
-    implementation(projects.feature.releases)
     implementation(projects.feature.reports)
     implementation(projects.feature.search)
     implementation(projects.feature.settings)
+    implementation(projects.feature.smsImport)
     implementation(projects.feature.transactions)
-    implementation(projects.feature.poll.impl)
     implementation(projects.shared.base)
     implementation(projects.shared.data.core)
     implementation(projects.shared.domain)
@@ -158,12 +153,9 @@ dependencies {
 
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.kotlin.android)
-    implementation(libs.bundles.ktor)
     implementation(libs.bundles.arrow)
     implementation(libs.bundles.compose)
     implementation(libs.bundles.activity)
-    implementation(libs.bundles.google)
-    implementation(libs.bundles.firebase)
     implementation(libs.datastore)
     implementation(libs.androidx.security)
     implementation(libs.androidx.biometrics)

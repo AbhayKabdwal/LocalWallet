@@ -2,20 +2,20 @@ package com.ivy.legacy
 
 object Constants {
     const val URL_TC =
-        "https://github.com/ILIYANGERMANOV/privacy-policies/blob/master/ivy-wallet-tc.md"
+        "https://github.com/AbhayKabdwal/ivy-wallet/blob/main/TERMS.md"
     const val URL_PRIVACY_POLICY =
-        "https://github.com/ILIYANGERMANOV/privacy-policies/blob/master/ivy-wallet-privacy-policy.md"
+        "https://github.com/AbhayKabdwal/ivy-wallet/blob/main/PRIVACY.md"
 
-    const val URL_IVY_WALLET_REPO = "https://github.com/Ivy-Apps/ivy-wallet"
+    const val URL_IVY_WALLET_REPO = "https://github.com/AbhayKabdwal/ivy-wallet"
 
-    const val URL_GITHUB_NEW_ISSUE = "https://github.com/Ivy-Apps/ivy-wallet/issues/new/choose"
+    const val URL_GITHUB_NEW_ISSUE =
+        "https://github.com/AbhayKabdwal/ivy-wallet/issues/new/choose"
 
-    const val URL_HELP_CENTER = "https://t.me/+ETavgioAvWg4NThk"
+    const val URL_HELP_CENTER = "https://github.com/AbhayKabdwal/ivy-wallet/discussions"
 
-    const val URL_IVY_TELEGRAM_INVITE = "https://t.me/+ETavgioAvWg4NThk"
+    const val URL_IVY_TELEGRAM_INVITE = "https://github.com/AbhayKabdwal/ivy-wallet/discussions"
 
-    const val URL_IVY_WALLET_GOOGLE_PLAY =
-        "https://play.google.com/store/apps/details?id=com.ivy.wallet"
+    const val URL_IVY_WALLET_GOOGLE_PLAY = "https://github.com/AbhayKabdwal/ivy-wallet/releases"
 
     const val CATEGORY_UNSPECIFIED_NAME = "Unspecified"
 

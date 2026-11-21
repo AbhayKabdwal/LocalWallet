@@ -1,13 +1,10 @@
 package com.ivy.data.repository
 
-import arrow.core.Either
-import arrow.core.raise.either
 import com.ivy.base.threading.DispatchersProvider
 import com.ivy.data.db.dao.read.ExchangeRatesDao
 import com.ivy.data.db.dao.write.WriteExchangeRatesDao
 import com.ivy.data.model.ExchangeRate
 import com.ivy.data.model.primitive.AssetCode
-import com.ivy.data.remote.RemoteExchangeRatesDataSource
 import com.ivy.data.repository.mapper.ExchangeRateMapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
@@ -19,16 +16,8 @@ class ExchangeRatesRepository @Inject constructor(
     private val mapper: ExchangeRateMapper,
     private val exchangeRatesDao: ExchangeRatesDao,
     private val writeExchangeRatesDao: WriteExchangeRatesDao,
-    private val remoteExchangeRatesDataSource: RemoteExchangeRatesDataSource,
     private val dispatchers: DispatchersProvider,
 ) {
-    suspend fun fetchEurExchangeRates(): Either<String, List<ExchangeRate>> = either {
-        withContext(dispatchers.io) {
-            val response = remoteExchangeRatesDataSource.fetchEurExchangeRates().bind()
-            with(mapper) { response.toDomain().bind() }
-        }
-    }
-
     fun findAll(): Flow<List<ExchangeRate>> =
         exchangeRatesDao.findAll().map { entities ->
             entities.mapNotNull {

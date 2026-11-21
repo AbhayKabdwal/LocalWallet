@@ -2,12 +2,10 @@ package com.ivy.data.repository.mapper
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
 import com.ivy.data.db.entity.ExchangeRateEntity
 import com.ivy.data.model.ExchangeRate
 import com.ivy.data.model.primitive.AssetCode
 import com.ivy.data.model.primitive.PositiveDouble
-import com.ivy.data.remote.responses.ExchangeRatesResponse
 import javax.inject.Inject
 
 class ExchangeRateMapper @Inject constructor() {
@@ -27,20 +25,5 @@ class ExchangeRateMapper @Inject constructor() {
             rate = rate.value,
             manualOverride = manualOverride,
         )
-    }
-
-    fun ExchangeRatesResponse.toDomain(): Either<String, List<ExchangeRate>> = either {
-        val domainRates = rates.mapNotNull { (currency, rate) ->
-            either {
-                ExchangeRate(
-                    baseCurrency = AssetCode.EUR,
-                    currency = AssetCode.from(currency).bind(),
-                    rate = PositiveDouble.from(rate).bind(),
-                    manualOverride = false
-                )
-            }.getOrNull()
-        }
-        ensure(domainRates.isNotEmpty()) { "Failed to map exchange rates to domain" }
-        domainRates
     }
 }

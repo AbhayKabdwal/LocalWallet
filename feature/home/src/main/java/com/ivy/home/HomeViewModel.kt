@@ -16,7 +16,6 @@ import com.ivy.data.model.primitive.AssetCode
 import com.ivy.data.repository.CategoryRepository
 import com.ivy.data.repository.mapper.TransactionMapper
 import com.ivy.domain.features.Features
-import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
 import com.ivy.frp.fixUnit
 import com.ivy.frp.then
 import com.ivy.frp.thenInvokeAfter
@@ -88,7 +87,6 @@ class HomeViewModel @Inject constructor(
     private val updateSettingsAct: UpdateSettingsAct,
     private val updateAccCacheAct: UpdateAccCacheAct,
     private val updateCategoriesCacheAct: UpdateCategoriesCacheAct,
-    private val syncExchangeRatesUseCase: SyncExchangeRatesUseCase,
     private val transactionMapper: TransactionMapper,
     private val timeProvider: TimeProvider,
     private val timeConverter: TimeConverter,
@@ -468,11 +466,6 @@ class HomeViewModel @Inject constructor(
             baseCurrency = newCurrency
         )
     } then updateSettingsAct then {
-        // update exchange rates from POV of the new base currency
-        AssetCode.from(newCurrency).onRight {
-            syncExchangeRatesUseCase.sync(it)
-        }
-    } then {
         reload()
     }
 

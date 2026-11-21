@@ -2,7 +2,6 @@ package com.ivy.onboarding.viewmodel
 
 import androidx.compose.runtime.MutableState
 import com.ivy.data.db.dao.read.AccountDao
-import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
 import com.ivy.legacy.LogoutLogic
 import com.ivy.base.legacy.SharedPrefs
 import com.ivy.data.model.Category
@@ -42,7 +41,6 @@ class OnboardingRouter(
     private val preloadDataLogic: PreloadDataLogic,
     private val categoryRepository: CategoryRepository,
     private val logoutLogic: LogoutLogic,
-    private val syncExchangeRatesUseCase: SyncExchangeRatesUseCase,
 ) {
 
     var isLoginCache = false
@@ -233,11 +231,6 @@ class OnboardingRouter(
         // the rest below is not UI stuff so I don't care
         ioThread {
             transactionReminderLogic.scheduleReminder()
-
-            AssetCode.from(baseCurrency?.code ?: IvyCurrency.getDefault().code)
-                .onRight {
-                    syncExchangeRatesUseCase.sync(baseCurrency = it)
-                }
         }
 
         resetState()
