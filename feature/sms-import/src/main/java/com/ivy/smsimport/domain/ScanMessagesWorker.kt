@@ -5,7 +5,6 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
@@ -41,9 +40,11 @@ class ScanMessagesWorker @AssistedInject constructor(
         private const val WORK_NAME = "ivy_sms_scan"
 
         fun enqueue(context: Context) {
-            val request = OneTimeWorkRequestBuilder<ScanMessagesWorker>()
-                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .build()
+            // Deliberately not expedited: WorkManager requires a
+            // getForegroundInfo() implementation for expedited CoroutineWorkers
+            // and throws at runtime without one, which silently killed every
+            // scan. A normal one-shot is the right shape for this anyway.
+            val request = OneTimeWorkRequestBuilder<ScanMessagesWorker>().build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK_NAME,

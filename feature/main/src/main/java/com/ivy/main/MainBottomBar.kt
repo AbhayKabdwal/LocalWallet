@@ -82,6 +82,7 @@ fun BoxWithConstraintsScope.BottomBar(
     onAddExpense: () -> Unit,
     onAddTransfer: () -> Unit,
     onAddPlannedPayment: () -> Unit,
+    onSyncMessages: () -> Unit,
 
     showAddAccountModal: () -> Unit,
 ) {
@@ -174,7 +175,8 @@ fun BoxWithConstraintsScope.BottomBar(
         onAddIncome = onAddIncome,
         onAddExpense = onAddExpense,
         onAddTransfer = onAddTransfer,
-        onAddPlannedPayment = onAddPlannedPayment
+        onAddPlannedPayment = onAddPlannedPayment,
+        onSyncMessages = onSyncMessages
     )
 
     var dragOffset by remember {
@@ -277,6 +279,7 @@ private fun TransactionButtons(
     onAddExpense: () -> Unit,
     onAddTransfer: () -> Unit,
     onAddPlannedPayment: () -> Unit,
+    onSyncMessages: () -> Unit,
 ) {
     val ivyContext = ivyWalletCtx()
 
@@ -313,6 +316,30 @@ private fun TransactionButtons(
         ) {
             onAddPlannedPayment()
         }
+
+        // Sync from messages --------------------------------------------------------------------
+        IvyOutlinedButton(
+            modifier = Modifier
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(
+                            x = ivyContext.screenWidth / 2 - placeable.width / 2,
+                            y = buttonCenterY.roundToInt() - 96.dp.roundToPx() -
+                                placeable.height - FAB_BUTTON_SIZE.roundToPx()
+                        )
+                    }
+                }
+                .padding(horizontal = 8.dp)
+                .alpha(buttonsShownPercent)
+                .zIndex(200f),
+            iconStart = R.drawable.ic_vue_messages_msgs,
+            text = stringResource(R.string.sync_from_messages),
+            solidBackground = true
+        ) {
+            onSyncMessages()
+        }
+        // Sync from messages --------------------------------------------------------------------
 
         // Add INCOME ------------------------------------------------------------------------------
         AddIncomeButton(

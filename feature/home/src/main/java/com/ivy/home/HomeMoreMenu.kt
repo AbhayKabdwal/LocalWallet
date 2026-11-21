@@ -62,6 +62,7 @@ import com.ivy.legacy.utils.springBounce
 import com.ivy.legacy.utils.statusBarInset
 import com.ivy.legacy.utils.toDensityPx
 import com.ivy.legacy.utils.verticalSwipeListener
+import com.ivy.navigation.AppearanceScreen
 import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.CategoriesScreen
 import com.ivy.navigation.IvyPreview
@@ -444,12 +445,11 @@ private fun QuickAccess(
 //            ivyContext.navigateTo(Screen.Charts)
 //        }
 
-            val rootScreen = rootScreen()
             MoreMenuButton(
-                icon = R.drawable.home_more_menu_share,
-                label = stringResource(R.string.share_ivy)
+                icon = R.drawable.ic_vue_design_color_swatch,
+                label = stringResource(R.string.appearance)
             ) {
-                rootScreen.shareIvyWallet()
+                nav.navigateTo(AppearanceScreen)
             }
 
             Spacer(Modifier.weight(1f))

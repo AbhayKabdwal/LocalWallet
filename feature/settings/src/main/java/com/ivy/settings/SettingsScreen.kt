@@ -384,73 +384,6 @@ private fun BoxWithConstraintsScope.UI(
             CustomFeatures(
                 onClick = { nav.navigateTo(FeaturesScreen) }
             )
-        }
-
-//        item {
-//            SettingsSectionDivider(text = stringResource(R.string.experimental))
-//
-//            Spacer(Modifier.height(16.dp))
-//
-//            val nav = navigation()
-//            SettingsDefaultButton(
-//                icon = R.drawable.ic_custom_atom_m,
-//                text = stringResource(R.string.experimental_settings)
-//            ) {
-//                nav.navigateTo(ExperimentalScreen)
-//            }
-//        }
-
-        item {
-            SettingsSectionDivider(text = stringResource(R.string.other))
-
-            Spacer(Modifier.height(16.dp))
-
-            val rootScreen = rootScreen()
-            SettingsPrimaryButton(
-                icon = R.drawable.ic_custom_family_m,
-                text = stringResource(R.string.share_ivy_wallet),
-                backgroundGradient = Gradient.solid(Red3)
-            ) {
-                rootScreen.shareIvyWallet()
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            SettingsPrimaryButton(
-                icon = R.drawable.github_logo,
-                iconPadding = 10.dp,
-                text = stringResource(R.string.ivy_wallet_is_opensource),
-                backgroundGradient = Gradient.solid(MediumBlack)
-            ) {
-                rootScreen.openUrlInBrowser(url = Constants.URL_IVY_WALLET_REPO)
-            }
-        }
-
-        item {
-            SettingsSectionDivider(text = stringResource(R.string.product))
-
-            Spacer(Modifier.height(12.dp))
-
-            IvyTelegram()
-
-            Spacer(Modifier.height(16.dp))
-
-            HelpCenter()
-
-            Spacer(Modifier.height(12.dp))
-
-            ReportBug()
-
-            Spacer(Modifier.height(12.dp))
-
-            val rootActivity = rootScreen()
-            RequestFeature {
-                rootActivity.openUrlInBrowser(Constants.URL_GITHUB_NEW_ISSUE)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            ContactSupport()
 
             Spacer(Modifier.height(12.dp))
 
@@ -468,6 +401,20 @@ private fun BoxWithConstraintsScope.UI(
 
             TCAndPrivacyPolicy()
         }
+
+//        item {
+//            SettingsSectionDivider(text = stringResource(R.string.experimental))
+//
+//            Spacer(Modifier.height(16.dp))
+//
+//            val nav = navigation()
+//            SettingsDefaultButton(
+//                icon = R.drawable.ic_custom_atom_m,
+//                text = stringResource(R.string.experimental_settings)
+//            ) {
+//                nav.navigateTo(ExperimentalScreen)
+//            }
+//        }
 
         item {
             SettingsSectionDivider(

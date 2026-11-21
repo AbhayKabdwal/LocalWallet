@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
 import com.ivy.design.l0_system.UI
+import com.ivy.design.system.ThemeAccents
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val White = Color(0xFFFAFAFA)
@@ -22,53 +23,53 @@ val Black = Color(0xFF111114)
 
 // Primary
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val Ivy = Color(0xFF6B4DFF)
+val Ivy: Color get() = ThemeAccents.primary
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val Blue = Color(0xFF4CC3FF)
+val Blue: Color get() = ThemeAccents.blue
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val Green = Color(0xFF14CC9E)
+val Green: Color get() = ThemeAccents.green
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val Orange = Color(0xFFF29F30)
+val Orange: Color get() = ThemeAccents.orange
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val Red = Color(0xFFFF4060)
+val Red: Color get() = ThemeAccents.red
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val Red3 = Color(0xFFFF4CA6)
 
 // Light
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val IvyLight = Color(0xFFD5CCFF)
+val IvyLight: Color get() = ThemeAccents.primaryLight
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GreenLight = Color(0xFFAAF2E0)
+val GreenLight: Color get() = ThemeAccents.greenLight
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val OrangeLight = Color(0xFFFFDEB3)
+val OrangeLight: Color get() = ThemeAccents.orangeLight
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val RedLight = Color(0xFFFFCCD5)
+val RedLight: Color get() = ThemeAccents.redLight
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val Red3Light = Color(0xFFFFCCE6)
 
 // Dark
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val IvyDark = Color(0xFF352680)
+val IvyDark: Color get() = ThemeAccents.primaryDark
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val Purple1Dark = Color(0xFF622680)
 
-val Purple = Color(0xFFA020F0)
+val Purple: Color get() = ThemeAccents.primary
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GreenDark = Color(0xFF0A664F)
+val GreenDark: Color get() = ThemeAccents.greenDark
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val OrangeDark = Color(0xFF734B17)
+val OrangeDark: Color get() = ThemeAccents.orangeDark
 // --------------------------------------------------------------------------------------------------
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")

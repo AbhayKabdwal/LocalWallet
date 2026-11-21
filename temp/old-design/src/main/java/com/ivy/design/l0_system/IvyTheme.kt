@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.ivy.design.api.IvyDesign
 import com.ivy.design.system.IvyMaterial3Theme
+import com.ivy.design.system.ThemeAccents
 import com.ivy.design.system.colors.PaletteResolver
 import com.ivy.domain.theming.AppTheme
 
@@ -62,6 +63,17 @@ fun IvyTheme(
         PaletteResolver.resolve(appTheme, isDarkTheme)
     }
     val colors = remember(resolved) { resolved.asLegacyIvyColors() }
+
+    // Legacy screens read top-level colour constants directly rather than
+    // UI.colors; this is what makes those follow the user's palette too.
+    //
+    // It has to be a SideEffect, not a write during composition: updating
+    // snapshot state mid-composition is a backwards write, so readers that had
+    // already composed kept the old colours until the app was restarted.
+    // Running it after composition settles invalidates them properly.
+    SideEffect {
+        ThemeAccents.update(resolved)
+    }
     val typography = design.typography()
     val shapes = design.shapes()
 

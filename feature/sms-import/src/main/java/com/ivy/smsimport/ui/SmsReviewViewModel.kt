@@ -51,8 +51,17 @@ class SmsReviewViewModel @Inject constructor(
     private var suggestedAccountId by mutableStateOf<UUID?>(null)
     private var suggestedCategoryId by mutableStateOf<UUID?>(null)
 
+    private var autoScanned = false
+
     init {
         loadPickerOptions()
+        // Opening this screen is an explicit request to sync, so scan straight
+        // away when the permission is already granted instead of waiting for
+        // the user to find a "Scan now" button.
+        if (permissionGranted) {
+            autoScanned = true
+            scan()
+        }
     }
 
     @Composable

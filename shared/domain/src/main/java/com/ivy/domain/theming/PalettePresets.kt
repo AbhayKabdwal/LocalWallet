@@ -6,7 +6,7 @@ package com.ivy.domain.theming
  */
 object PalettePresets {
 
-    val Ivy = Palette.Default
+    val Default = Palette.Default
 
     val Forest = Palette(
         id = "forest",
@@ -79,7 +79,7 @@ object PalettePresets {
     )
 
     val all: List<Palette> = listOf(
-        Ivy,
+        Default,
         Forest,
         Ocean,
         Slate,

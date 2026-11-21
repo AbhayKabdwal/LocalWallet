@@ -3,9 +3,15 @@ package com.ivy.domain.theming
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ivy.data.datastore.IvyDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -31,6 +37,22 @@ class ThemeRepository @Inject constructor(
     val theme: Flow<AppTheme> = dataStore.data.map { prefs ->
         prefs[KEY]?.let(::decode) ?: AppTheme.Default
     }
+
+    /**
+     * The theme as a hot, process-lifetime [StateFlow].
+     *
+     * This deliberately does not live on a ViewModel. An earlier version
+     * exposed it via `stateIn(viewModelScope)` on the root ViewModel, and when
+     * that scope was cancelled the flow silently stopped producing: the palette
+     * still saved and still applied on next launch, but nothing repainted while
+     * the app was running. The theme is process-wide state, so it is scoped to
+     * the process.
+     */
+    val themeState: StateFlow<AppTheme> = theme.stateIn(
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        started = SharingStarted.Eagerly,
+        initialValue = AppTheme.Default,
+    )
 
     suspend fun current(): AppTheme = theme.first()
 

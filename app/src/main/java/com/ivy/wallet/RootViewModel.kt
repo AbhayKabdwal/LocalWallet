@@ -30,9 +30,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicLong
@@ -51,12 +49,13 @@ class RootViewModel @Inject constructor(
     themeRepository: ThemeRepository,
 ) : ViewModel() {
 
-    /** The user's appearance settings, applied to both colour systems. */
-    val appTheme: StateFlow<AppTheme> = themeRepository.theme.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = AppTheme.Default,
-    )
+    /**
+     * The user's appearance settings, applied to both colour systems.
+     *
+     * Re-exposed from the repository's process-scoped flow rather than
+     * collected into `viewModelScope`: see ThemeRepository.themeState.
+     */
+    val appTheme: StateFlow<AppTheme> = themeRepository.themeState
 
     companion object {
         const val EXTRA_ADD_TRANSACTION_TYPE = "add_transaction_type_extra"

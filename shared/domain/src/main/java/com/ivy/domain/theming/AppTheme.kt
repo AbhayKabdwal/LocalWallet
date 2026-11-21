@@ -58,13 +58,13 @@ data class Palette(
 ) {
     companion object {
         /**
-         * The stock Ivy Wallet accents. `0xFF6B4DFF` is the purple the legacy
-         * screens have always used; the Material3 layer used a slightly
-         * different one, and this unifies both on the colour users actually saw.
+         * The default accents. `0xFF6B4DFF` is the purple the legacy screens
+         * have always used; the Material3 layer used a slightly different one,
+         * and this unifies both on the colour users actually saw.
          */
         val Default = Palette(
             id = "ivy",
-            name = "Ivy Purple",
+            name = "Default",
             primary = ColorHex(0xFF6B4DFF),
             secondary = ColorHex(0xFF14CC9E),
             income = ColorHex(0xFF14CC9E),

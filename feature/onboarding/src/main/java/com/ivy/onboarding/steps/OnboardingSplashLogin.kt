@@ -174,9 +174,9 @@ fun BoxWithConstraintsScope.OnboardingSplashLogin(
                 .clickableNoIndication(rememberInteractionSource()) {
                     internalSwitch = !internalSwitch
                 },
-            painter = painterResource(id = R.drawable.ivy_wallet_logo),
+            painter = painterResource(id = R.drawable.app_logo),
             contentScale = ContentScale.FillBounds,
-            contentDescription = "Ivy Wallet logo"
+            contentDescription = "LocalWallet logo"
         )
 
         Spacer(Modifier.height(marginTextTop))
@@ -186,7 +186,7 @@ fun BoxWithConstraintsScope.OnboardingSplashLogin(
                 ivyContext = ivyContext,
                 percentTransition = percentTransition
             ),
-            text = "Ivy Wallet",
+            text = "LocalWallet",
             style = UI.typo.h2.style(
                 color = UI.colors.pureInverse,
                 fontWeight = FontWeight.ExtraBold

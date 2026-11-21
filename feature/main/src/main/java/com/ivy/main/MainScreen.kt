@@ -19,6 +19,7 @@ import com.ivy.legacy.data.model.MainTab
 import com.ivy.legacy.ivyWalletCtx
 import com.ivy.legacy.utils.onScreenStart
 import com.ivy.navigation.EditPlannedScreen
+import com.ivy.navigation.SmsReviewScreen
 import com.ivy.navigation.EditTransactionScreen
 import com.ivy.navigation.MainScreen
 import com.ivy.navigation.navigation
@@ -103,6 +104,9 @@ private fun BoxWithConstraintsScope.UI(
                     plannedPaymentRuleId = null
                 )
             )
+        },
+        onSyncMessages = {
+            nav.navigateTo(SmsReviewScreen)
         },
 
         showAddAccountModal = {
