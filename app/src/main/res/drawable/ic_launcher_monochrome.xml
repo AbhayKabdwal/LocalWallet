@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Monochrome variant for Android 13+ themed icons. The system tints this as a
+     flat silhouette, so the clasp is punched out with evenOdd rather than
+     relying on a second colour.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,33 L68,33 A5,5 0 0 1 73,38 L73,43 L37,43 L37,38 A5,5 0 0 1 42,33 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M37,43 L71,43 A9,9 0 0 1 80,52 L80,67 A9,9 0 0 1 71,76 L37,76 A9,9 0 0 1 28,67 L28,52 A9,9 0 0 1 37,43 Z M70.5,56 A3.6,3.6 0 1 0 70.5,63.2 A3.6,3.6 0 1 0 70.5,56 Z" />
+</vector>

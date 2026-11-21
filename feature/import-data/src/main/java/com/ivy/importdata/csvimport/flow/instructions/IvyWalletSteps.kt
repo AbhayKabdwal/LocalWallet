@@ -18,7 +18,9 @@ fun IvyWalletSteps(
         number = 1,
         title = stringResource(R.string.export_data),
         description = """
-            Settings > "Backup Data" (do NOT use "Export to CSV"!)
+            In Ivy Wallet: Settings > "Backup Data" for a full backup (accounts,
+            categories, colours and icons), or Settings > "Export CSV" for just
+            your transactions. Both work here.
         """.trimIndent()
     )
 
@@ -33,8 +35,8 @@ fun IvyWalletSteps(
 
     UploadFileStep(
         stepNumber = 2,
-        text = "Upload Backup (ZIP/CSV/JSON) file",
-        btnTitle = "Upload Backup file",
+        text = "Upload the backup (ZIP/JSON) or CSV file",
+        btnTitle = "Choose file",
         onUploadClick = onUploadClick
     )
 }

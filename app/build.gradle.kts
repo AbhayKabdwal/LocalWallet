@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -14,7 +16,7 @@ android {
     compileSdk = libs.versions.target.sdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.ivy.wallet"
+        applicationId = "io.github.abhaykabdwal.localwallet"
         minSdk = libs.versions.min.sdk.get().toInt()
         targetSdk = libs.versions.target.sdk.get().toInt()
         versionName = libs.versions.version.name.get()
@@ -34,10 +36,27 @@ android {
         }
 
         create("release") {
-            storeFile = file("../sign.jks")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            // Signing details come from a properties file kept outside the
+            // repository, falling back to environment variables for CI. The
+            // keystore itself is never committed.
+            val propsFile = rootProject.file(
+                System.getenv("LOCALWALLET_KEYSTORE_PROPERTIES")
+                    ?: "${System.getProperty("user.home")}/.localwallet-signing/keystore.properties"
+            )
+            if (propsFile.exists()) {
+                val props = Properties().apply {
+                    propsFile.inputStream().use(::load)
+                }
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            } else {
+                storeFile = System.getenv("SIGNING_STORE_FILE")?.let(::file)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
         }
     }
 
@@ -55,7 +74,7 @@ android {
 
             signingConfig = signingConfigs.getByName("release")
 
-            resValue("string", "app_name", "Ivy Wallet")
+            resValue("string", "app_name", "LocalWallet")
         }
 
         debug {
@@ -68,7 +87,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
 
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Ivy Wallet Debug")
+            resValue("string", "app_name", "LocalWallet Debug")
         }
 
         create("demo") {
@@ -87,7 +106,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
 
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Ivy Wallet")
+            resValue("string", "app_name", "LocalWallet")
         }
     }
 

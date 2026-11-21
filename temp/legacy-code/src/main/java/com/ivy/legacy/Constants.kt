@@ -18,10 +18,4 @@ object Constants {
     const val URL_IVY_WALLET_GOOGLE_PLAY = "https://github.com/AbhayKabdwal/ivy-wallet/releases"
 
     const val CATEGORY_UNSPECIFIED_NAME = "Unspecified"
-
-    const val URL_IVY_CONTRIBUTORS =
-        "https://github.com/Ivy-Apps/ivy-wallet#contributors-wall"
-
-    const val URL_GITHUB_SPONSORS =
-        "https://github.com/sponsors/Ivy-Apps"
 }

@@ -282,14 +282,6 @@ class CSVImporter @Inject constructor(
         }
     }
 
-    private fun mapAmount(amount: String?): Double? {
-        if (amount == null || amount.isBlank()) return null
-
-        return amount
-            .replace(",", "")
-            .toDoubleOrNull()
-    }
-
     private fun mapDate(
         rowMapping: RowMapping,
         dateString: String?
@@ -550,4 +542,20 @@ class CSVImporter @Inject constructor(
 
     private fun List<String>.extract(index: Int?): String? =
         index?.let { this.getOrNull(index) }
+
+    companion object {
+        /**
+         * Ivy's own CSV export quotes thousands separators ("7,400.00"), so the
+         * separator has to be stripped before parsing. In the companion object
+         * so the rule can be unit-tested without standing up the importer's
+         * eight injected dependencies.
+         */
+        fun mapAmount(amount: String?): Double? {
+            if (amount == null || amount.isBlank()) return null
+
+            return amount
+                .replace(",", "")
+                .toDoubleOrNull()
+        }
+    }
 }

@@ -1,9 +1,10 @@
-# Ivy Wallet (local-only fork)
+# LocalWallet
 
-A manual expense tracker for Android, written in Kotlin and Jetpack Compose.
+A manual expense tracker for Android that keeps everything on your phone. Written in Kotlin and
+Jetpack Compose.
 
-This is a fork of [Ivy-Apps/ivy-wallet](https://github.com/Ivy-Apps/ivy-wallet), which the original
-authors stopped maintaining on 5 November 2024. It keeps what made the app good and changes three
+LocalWallet is a fork of [Ivy Wallet](https://github.com/Ivy-Apps/ivy-wallet), which the original
+authors stopped maintaining on 5 November 2024. It keeps what made that app good and changes three
 things:
 
 - **No trackers and no servers.** Firebase Crashlytics, Firebase Firestore and the Google Play
@@ -97,6 +98,18 @@ and a test case. If your bank is not recognised, that is the file to look at.
 > exception that needs a Permissions Declaration Form. This fork is built for F-Droid-style
 > distribution and GitHub releases, where that does not apply. If you publish to Play, either file
 > the declaration or build with the feature disabled.
+
+## Coming from Ivy Wallet
+
+LocalWallet installs alongside Ivy Wallet rather than over it, so your old data stays put while you
+try this one.
+
+1. In Ivy Wallet: **Settings -> Export CSV**.
+2. In LocalWallet: **Settings -> Import data -> Ivy Wallet**, and pick that file.
+
+The exporter writes UTF-16 with quoted thousands separators, and the importer handles both. Accounts
+and categories named in the file are created as needed, and transfers are linked to both accounts.
+Covered by `IvyCsvImportTest`.
 
 ## Building
 
