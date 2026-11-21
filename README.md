@@ -2,6 +2,8 @@
 
 A money tracker for Android that keeps your financial records on your phone and nowhere else.
 
+LocalWallet is a fork of [Ivy Wallet](https://github.com/Ivy-Apps/ivy-wallet).
+
 No account. No sync server. No analytics. The app does not declare the `INTERNET` permission at
 all, so it cannot send your data anywhere even if it wanted to — you can verify that yourself in
 one command, and the instructions are below.

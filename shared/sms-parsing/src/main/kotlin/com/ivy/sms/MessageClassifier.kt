@@ -105,6 +105,27 @@ object MessageClassifier {
         "sent to",
         "debit of",
         "credit of",
+        // Verb-first wordings. Several large banks lead with the verb and put
+        // the amount after it ("Debit INR 500.00 A/c no. XX1234", "Sent Rs.49
+        // From ... A/C x1234"), so the earlier markers alone missed them
+        // entirely. Each is paired with a currency token to keep "credit card"
+        // and similar noun uses from counting as movement.
+        "debit rs",
+        "debit inr",
+        "debit ₹",
+        "credit rs",
+        "credit inr",
+        "credit ₹",
+        "sent rs",
+        "sent inr",
+        "sent ₹",
+        "trf to",
+        "trf from",
+        "transfer to",
+        "transfer from",
+        // Card purchase receipts ("Thank you for using your Credit Card
+        // ending 4321 for Rs.1,250.00 at ...") name no movement verb at all.
+        "for using your",
     )
 
     /** Signs the message concerns an account or card. */
@@ -129,6 +150,21 @@ object MessageClassifier {
         RegexOption.IGNORE_CASE,
     )
 
+    /**
+     * An amount written with no currency token at all, next to a movement verb.
+     *
+     * SBI - the largest bank in the country this feature was built for - sends
+     * "A/C X1234 debited by 150.0 on date 21Nov25", with no "Rs" anywhere in
+     * the message. Requiring a currency token rejected every one of those
+     * before a single rule ran. The verb has to be adjacent so that a bare
+     * number elsewhere in the text cannot stand in for an amount.
+     */
+    private val verbAdjacentAmountPattern = Regex(
+        """(?:debited|credited|withdrawn|spent|paid|deducted|debit|credit|sent)""" +
+            """\s*(?:by|with|for|of|to)?\s*(?:rs\.?|inr|₹|\$|€|£)?\s*[\d,]+(?:\.\d{1,2})?""",
+        RegexOption.IGNORE_CASE,
+    )
+
     fun classify(body: String): RejectReason? {
         val text = body.lowercase()
 
@@ -146,7 +182,11 @@ object MessageClassifier {
             return RejectReason.BalanceEnquiryOnly
         }
         if (!hasDirection) return RejectReason.NoRuleMatched
-        if (!amountPattern.containsMatchIn(text)) return RejectReason.NoRuleMatched
+        if (!amountPattern.containsMatchIn(text) &&
+            !verbAdjacentAmountPattern.containsMatchIn(text)
+        ) {
+            return RejectReason.NoRuleMatched
+        }
         if (accountMarkers.none { it in text }) return RejectReason.NotFromKnownSender
 
         return null
