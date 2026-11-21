@@ -14,6 +14,7 @@ import com.ivy.base.time.TimeConverter
 import com.ivy.base.time.TimeProvider
 import com.ivy.design.IvyContext
 import com.ivy.design.l0_system.IvyTheme
+import com.ivy.domain.theming.AppTheme
 import com.ivy.ui.time.TimeFormatter
 
 val LocalIvyContext = compositionLocalOf<IvyContext> { error("No LocalIvyContext") }
@@ -38,6 +39,7 @@ fun IvyUI(
     timeProvider: TimeProvider,
     timeFormatter: TimeFormatter,
     design: IvyDesign,
+    appTheme: AppTheme = AppTheme.Default,
     includeSurface: Boolean = true,
     content: @Composable BoxWithConstraintsScope.() -> Unit
 ) {
@@ -50,7 +52,7 @@ fun IvyUI(
         LocalTimeFormatter provides timeFormatter,
     ) {
         IvyTheme(
-            theme = ivyContext.theme,
+            appTheme = appTheme,
             design = design
         ) {
             WrapWithSurface(includeSurface = includeSurface) {

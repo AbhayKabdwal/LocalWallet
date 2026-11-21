@@ -7,13 +7,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.ivy.base.legacy.Theme
 import com.ivy.design.api.IvyDesign
 import com.ivy.design.system.IvyMaterial3Theme
+import com.ivy.design.system.colors.PaletteResolver
+import com.ivy.domain.theming.AppTheme
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val LocalIvyColors = compositionLocalOf<IvyColors> { error("No IvyColors") }
@@ -42,15 +44,24 @@ object UI {
         get() = LocalIvyShapes.current
 }
 
-@Deprecated("Old design system. Use `:ivy-design` and Material3")
+/**
+ * Provides both colour systems from a single [AppTheme].
+ *
+ * The legacy `UI.colors` and the Material3 scheme are derived from the same
+ * resolved palette, which is what keeps a user-chosen accent consistent across
+ * old and new screens.
+ */
 @Composable
 fun IvyTheme(
-    theme: Theme,
+    appTheme: AppTheme,
     design: IvyDesign,
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colors = design.colors(theme, isDarkTheme)
+    val resolved = remember(appTheme, isDarkTheme) {
+        PaletteResolver.resolve(appTheme, isDarkTheme)
+    }
+    val colors = remember(resolved) { resolved.asLegacyIvyColors() }
     val typography = design.typography()
     val shapes = design.shapes()
 
@@ -70,8 +81,8 @@ fun IvyTheme(
         }
 
         IvyMaterial3Theme(
-            dark = !colors.isLight,
-            isTrueBlack = theme == Theme.AMOLED_DARK,
+            theme = appTheme,
+            colors = resolved,
             content = content,
         )
     }

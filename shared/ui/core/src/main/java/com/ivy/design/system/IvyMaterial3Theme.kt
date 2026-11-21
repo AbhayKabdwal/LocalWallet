@@ -3,87 +3,99 @@ package com.ivy.design.system
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import com.ivy.design.system.colors.IvyColors
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import com.ivy.design.system.colors.PaletteResolver
+import com.ivy.design.system.colors.ResolvedColors
+import com.ivy.design.system.colors.onColorFor
+import com.ivy.domain.theming.AppTheme
+import com.ivy.domain.theming.ThemeMode
+import android.os.Build
 
+/**
+ * Applies the user's [AppTheme] to the Material3 layer.
+ *
+ * The same [ResolvedColors] is also bridged into the legacy `UI.colors` system
+ * by `IvyTheme`, so both halves of the app stay in sync.
+ */
+@Composable
+fun IvyMaterial3Theme(
+    theme: AppTheme,
+    colors: ResolvedColors = PaletteResolver.resolve(theme, isSystemInDarkTheme()),
+    content: @Composable () -> Unit,
+) {
+    val dynamic = theme.useWallpaperColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val context = LocalContext.current
+    val scheme = when {
+        dynamic && colors.isLight -> dynamicLightColorScheme(context)
+        dynamic -> dynamicDarkColorScheme(context)
+        else -> colors.toColorScheme()
+    }
+
+    CompositionLocalProvider(
+        LocalGlowSpec provides GlowSpec.of(theme.emphasis),
+        LocalEmphasis provides theme.emphasis,
+        LocalResolvedColors provides colors,
+    ) {
+        MaterialTheme(colorScheme = scheme, content = content)
+    }
+}
+
+/**
+ * Kept for the legacy call path and for Paparazzi previews that only have a
+ * light/dark flag to hand.
+ */
 @Composable
 fun IvyMaterial3Theme(
     isTrueBlack: Boolean,
     dark: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (dark) ivyDarkColorScheme(isTrueBlack) else ivyLightColorScheme(),
-        content = content,
-    )
+    val mode = when {
+        isTrueBlack -> ThemeMode.Amoled
+        dark -> ThemeMode.Dark
+        else -> ThemeMode.Light
+    }
+    IvyMaterial3Theme(theme = AppTheme.Default.copy(mode = mode), content = content)
 }
 
-private fun ivyLightColorScheme(): ColorScheme = ColorScheme(
-    primary = IvyColors.Purple.primary,
-    onPrimary = IvyColors.White,
-    primaryContainer = IvyColors.Purple.light,
-    onPrimaryContainer = IvyColors.White,
-    inversePrimary = IvyColors.Purple.dark,
-    secondary = IvyColors.Green.primary,
-    onSecondary = IvyColors.White,
-    secondaryContainer = IvyColors.Green.light,
-    onSecondaryContainer = IvyColors.White,
-    tertiary = IvyColors.Green.primary,
-    onTertiary = IvyColors.White,
-    tertiaryContainer = IvyColors.Green.light,
-    onTertiaryContainer = IvyColors.White,
+fun ResolvedColors.toColorScheme(): ColorScheme = ColorScheme(
+    primary = primary.primary,
+    onPrimary = onPrimary,
+    primaryContainer = primary.light,
+    onPrimaryContainer = onColorFor(primary.light),
+    inversePrimary = primary.dark,
 
-    error = IvyColors.Red.primary,
-    onError = IvyColors.White,
-    errorContainer = IvyColors.Red.light,
-    onErrorContainer = IvyColors.White,
+    secondary = secondary.primary,
+    onSecondary = onSecondary,
+    secondaryContainer = secondary.light,
+    onSecondaryContainer = onColorFor(secondary.light),
 
-    background = IvyColors.White,
-    onBackground = IvyColors.Black,
-    surface = IvyColors.White,
-    onSurface = IvyColors.Black,
-    surfaceVariant = IvyColors.ExtraLightGray,
-    onSurfaceVariant = IvyColors.Black,
-    surfaceTint = IvyColors.Black,
-    inverseSurface = IvyColors.DarkGray,
-    inverseOnSurface = IvyColors.White,
+    tertiary = income.primary,
+    onTertiary = onIncome,
+    tertiaryContainer = income.light,
+    onTertiaryContainer = onColorFor(income.light),
 
-    outline = IvyColors.Gray,
-    outlineVariant = IvyColors.DarkGray,
-    scrim = IvyColors.ExtraDarkGray.copy(alpha = 0.8f)
-)
+    error = expense.primary,
+    onError = onExpense,
+    errorContainer = expense.light,
+    onErrorContainer = onColorFor(expense.light),
 
-private fun ivyDarkColorScheme(isTrueBlack: Boolean): ColorScheme = ColorScheme(
-    primary = IvyColors.Purple.primary,
-    onPrimary = IvyColors.White,
-    primaryContainer = IvyColors.Purple.light,
-    onPrimaryContainer = IvyColors.White,
-    inversePrimary = IvyColors.Purple.dark,
-    secondary = IvyColors.Green.primary,
-    onSecondary = IvyColors.White,
-    secondaryContainer = IvyColors.Green.light,
-    onSecondaryContainer = IvyColors.White,
-    tertiary = IvyColors.Green.primary,
-    onTertiary = IvyColors.White,
-    tertiaryContainer = IvyColors.Green.light,
-    onTertiaryContainer = IvyColors.White,
+    background = surface,
+    onBackground = onSurface,
+    surface = surface,
+    onSurface = onSurface,
+    surfaceVariant = surfaceVariant,
+    onSurfaceVariant = onSurfaceVariant,
+    surfaceTint = primary.primary,
+    inverseSurface = onSurface,
+    inverseOnSurface = surface,
 
-    error = IvyColors.Red.primary,
-    onError = IvyColors.White,
-    errorContainer = IvyColors.Red.light,
-    onErrorContainer = IvyColors.White,
-
-    background = if (isTrueBlack) IvyColors.TrueBlack else IvyColors.Black,
-    onBackground = IvyColors.White,
-    surface = if (isTrueBlack) IvyColors.TrueBlack else IvyColors.Black,
-    onSurface = IvyColors.White,
-    surfaceVariant = IvyColors.ExtraDarkGray,
-    onSurfaceVariant = IvyColors.White,
-    surfaceTint = IvyColors.White,
-    inverseSurface = IvyColors.LightGray,
-    inverseOnSurface = if (isTrueBlack) IvyColors.TrueBlack else IvyColors.Black,
-
-    outline = IvyColors.Gray,
-    outlineVariant = IvyColors.LightGray,
-    scrim = IvyColors.ExtraLightGray.copy(alpha = 0.8f)
+    outline = outline,
+    outlineVariant = outline,
+    scrim = Color(0xCC000000),
 )

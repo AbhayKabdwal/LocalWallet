@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.WindowInsetsCompat
+import com.ivy.design.system.LocalGlowSpec
 import com.ivy.navigation.navigation
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
@@ -100,6 +102,14 @@ fun Modifier.clickableNoIndication(
     )
 }
 
+/**
+ * Draws the coloured "glow" behind a surface.
+ *
+ * The intensity is scaled by the theme's emphasis setting rather than being
+ * fixed, so the user can soften or switch off the glow app-wide without any of
+ * the ~18 call sites changing. At [com.ivy.domain.theming.Emphasis.Flat] the
+ * blur is skipped entirely, so it costs nothing.
+ */
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 fun Modifier.drawColoredShadow(
     color: Color,
@@ -108,28 +118,42 @@ fun Modifier.drawColoredShadow(
     shadowRadius: Dp = 16.dp,
     offsetX: Dp = 0.dp,
     offsetY: Dp = 8.dp
-) = this.drawBehind {
-    val transparentColor = android.graphics.Color.toArgb(color.copy(alpha = 0.0f).value.toLong())
-    val shadowColor = android.graphics.Color.toArgb(color.copy(alpha = alpha).value.toLong())
-    this.drawIntoCanvas {
-        val paint = Paint()
-        val frameworkPaint = paint.asFrameworkPaint()
-        frameworkPaint.color = transparentColor
-        frameworkPaint.setShadowLayer(
-            shadowRadius.toPx(),
-            offsetX.toPx(),
-            offsetY.toPx(),
-            shadowColor
-        )
-        it.drawRoundRect(
-            0f,
-            0f,
-            this.size.width,
-            this.size.height,
-            borderRadius.toPx(),
-            borderRadius.toPx(),
-            paint
-        )
+) = composed {
+    val glow = LocalGlowSpec.current
+    if (glow.isNone) {
+        Modifier
+    } else {
+        val scaledAlpha = alpha * glow.alphaScale
+        val scaledRadius = shadowRadius * glow.radiusScale
+        val scaledOffsetX = offsetX * glow.offsetScale
+        val scaledOffsetY = offsetY * glow.offsetScale
+
+        Modifier.drawBehind {
+            val transparentColor =
+                android.graphics.Color.toArgb(color.copy(alpha = 0.0f).value.toLong())
+            val shadowColor =
+                android.graphics.Color.toArgb(color.copy(alpha = scaledAlpha).value.toLong())
+            this.drawIntoCanvas {
+                val paint = Paint()
+                val frameworkPaint = paint.asFrameworkPaint()
+                frameworkPaint.color = transparentColor
+                frameworkPaint.setShadowLayer(
+                    scaledRadius.toPx(),
+                    scaledOffsetX.toPx(),
+                    scaledOffsetY.toPx(),
+                    shadowColor
+                )
+                it.drawRoundRect(
+                    0f,
+                    0f,
+                    this.size.width,
+                    this.size.height,
+                    borderRadius.toPx(),
+                    borderRadius.toPx(),
+                    paint
+                )
+            }
+        }
     }
 }
 
