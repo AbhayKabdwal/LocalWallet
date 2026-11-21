@@ -96,7 +96,12 @@ class RootActivity : AppCompatActivity(), RootScreen {
             val isSystemInDarkTheme = isSystemInDarkTheme()
             val appTheme by viewModel.appTheme.collectAsState()
 
-            LaunchedEffect(isSystemInDarkTheme) {
+            // Keyed on the ViewModel as well as the theme: `start()` is what
+            // resolves the app-lock state out of `null`, and `null` renders as
+            // an empty screen. If this instance is ever replaced, starting the
+            // replacement is the difference between the app drawing and the
+            // app showing nothing.
+            LaunchedEffect(viewModel, isSystemInDarkTheme) {
                 viewModel.start(isSystemInDarkTheme, intent)
             }
 
