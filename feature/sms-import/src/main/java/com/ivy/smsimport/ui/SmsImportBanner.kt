@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.ivy.navigation.SmsReviewScreen
 import com.ivy.navigation.navigation
 import com.ivy.smsimport.data.SmsImportDao
@@ -46,8 +47,14 @@ class SmsImportBannerViewModel @Inject constructor(
 @Composable
 fun SmsImportBanner(
     modifier: Modifier = Modifier,
-    viewModel: SmsImportBannerViewModel = hiltViewModel(),
 ) {
+    // Previews and Paparazzi screenshot tests render the Home screen with no
+    // Activity behind it, so there is no ViewModelStore to hold this one.
+    // Taking the owner explicitly - rather than letting `hiltViewModel()`
+    // assert on it in a default argument - lets an incidental banner render
+    // nothing in that case instead of bringing the whole screen down.
+    val owner = LocalViewModelStoreOwner.current ?: return
+    val viewModel: SmsImportBannerViewModel = hiltViewModel(owner)
     val count by viewModel.pendingCount.collectAsState(initial = 0)
     var dismissed by remember { mutableStateOf(false) }
     val nav = navigation()
