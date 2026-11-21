@@ -18,6 +18,8 @@ import com.ivy.design.api.IvyDesign
 import com.ivy.design.api.IvyUI
 import com.ivy.design.api.systems.IvyWalletDesign
 import com.ivy.design.l0_system.UI
+import com.ivy.domain.theming.AppTheme
+import com.ivy.domain.theming.ThemeMode
 import com.ivy.ui.time.impl.AndroidDevicePreferences
 import com.ivy.ui.time.impl.IvyTimeFormatter
 
@@ -56,6 +58,11 @@ fun IvyPreview(
     val timeConverter = StandardTimeConverter(timeProvider)
     IvyUI(
         design = design,
+        // Colours now come from AppTheme, not from the legacy switchTheme call
+        // above. Without this the preview fell back to AppTheme.Default, whose
+        // mode is SystemAuto - so every `theme = Theme.DARK` preview and every
+        // dark Paparazzi snapshot rendered in light colours.
+        appTheme = AppTheme.Default.copy(mode = theme.toThemeMode()),
         content = content,
         timeConverter = timeConverter,
         timeProvider = timeProvider,
@@ -72,4 +79,12 @@ fun IvyPreview(
 fun defaultDesign(): IvyDesign = object : IvyWalletDesign() {
     override fun context(): IvyContext = object : IvyContext() {
     }
+}
+
+/** Bridges the legacy preview flag onto the theme mode the app actually uses. */
+private fun Theme.toThemeMode(): ThemeMode = when (this) {
+    Theme.LIGHT -> ThemeMode.Light
+    Theme.DARK -> ThemeMode.Dark
+    Theme.AMOLED_DARK -> ThemeMode.Amoled
+    Theme.AUTO -> ThemeMode.SystemAuto
 }
