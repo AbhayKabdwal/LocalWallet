@@ -85,18 +85,18 @@ val MediumWhite = Color(0xFFEFEEF0)
 val Transparent = Color(0x00000000)
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GradientRed = Gradient(Red, Color(0xFFFF99AB))
+val GradientRed: Gradient get() = Gradient(Red, ThemeAccents.redAlt)
 
-val GradientPurple = Gradient(Purple, Color(0xFFED3EF7))
-
-@Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GradientGreen = Gradient(Green, Color(0xFF49F2C8))
+val GradientPurple: Gradient get() = Gradient(Purple, ThemeAccents.primaryAlt)
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GradientOrangeRevert = Gradient(Color(0xFFF2CD9E), Orange)
+val GradientGreen: Gradient get() = Gradient(Green, ThemeAccents.greenAlt)
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GradientIvy = Gradient(Ivy, Color(0xFFAA99FF))
+val GradientOrangeRevert: Gradient get() = Gradient(ThemeAccents.orangeAlt, Orange)
+
+@Deprecated("Old design system. Use `:ivy-design` and Material3")
+val GradientIvy: Gradient get() = Gradient(Ivy, ThemeAccents.primaryAlt)
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 fun Modifier.gradientCutBackgroundTop(

@@ -60,6 +60,18 @@ object ThemeAccents {
     var blueDark by mutableStateOf(Color(0xFF266280))
         private set
 
+    // Second stop for the two-tone gradients the legacy UI paints with. These
+    // were hardcoded, so a themed start colour blended into a fixed lilac or
+    // mint and the result looked nothing like the chosen palette.
+    var primaryAlt by mutableStateOf(Color(0xFFAA99FF))
+        private set
+    var greenAlt by mutableStateOf(Color(0xFF49F2C8))
+        private set
+    var redAlt by mutableStateOf(Color(0xFFFF99AB))
+        private set
+    var orangeAlt by mutableStateOf(Color(0xFFF2CD9E))
+        private set
+
     fun update(colors: ResolvedColors) {
         primary = colors.primary.primary
         primaryLight = colors.primary.extraLight
@@ -76,6 +88,11 @@ object ThemeAccents {
         orange = colors.warning.primary
         orangeLight = colors.warning.extraLight
         orangeDark = colors.warning.extraDark
+
+        primaryAlt = colors.primary.kindaLight
+        greenAlt = colors.income.kindaLight
+        redAlt = colors.expense.kindaLight
+        orangeAlt = colors.warning.light
 
         blue = colors.secondary.primary
         blueLight = colors.secondary.extraLight
