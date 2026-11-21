@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.feature.smsImport)
     implementation(projects.feature.accounts)
     implementation(projects.feature.home)
     implementation(projects.shared.base)

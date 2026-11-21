@@ -35,6 +35,7 @@ import com.ivy.frp.forward
 import com.ivy.frp.then2
 import com.ivy.home.Constants.SWIPE_HORIZONTAL_THRESHOLD
 import com.ivy.home.customerjourney.CustomerJourney
+import com.ivy.smsimport.ui.SmsImportBanner
 import com.ivy.home.customerjourney.CustomerJourneyCardModel
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.data.AppBaseData
@@ -361,6 +362,10 @@ fun HomeLazyColumn(
             Spacer(Modifier.height(16.dp))
 
             TransactionsDividerLine()
+        }
+
+        item {
+            SmsImportBanner()
         }
 
         item {

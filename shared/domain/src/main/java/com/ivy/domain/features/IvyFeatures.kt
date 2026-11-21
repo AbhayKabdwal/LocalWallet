@@ -78,6 +78,15 @@ class IvyFeatures @Inject constructor() : Features {
         defaultValue = false
     )
 
+    override val smsAutoImport = BoolFeature(
+        key = "sms_auto_import",
+        group = FeatureGroup.Automation,
+        name = "Import from messages",
+        description = "Scan bank SMS already on this device for transactions. " +
+            "Everything is parsed on your phone and nothing is ever uploaded.",
+        defaultValue = false
+    )
+
     override val allFeatures: List<BoolFeature>
         get() = listOf(
             sortCategoriesAscending,
@@ -87,7 +96,8 @@ class IvyFeatures @Inject constructor() : Features {
             showCategorySearchBar,
             hideTotalBalance,
             standardKeypadLayout,
-            showAccountColorsInTransactions
+            showAccountColorsInTransactions,
+            smsAutoImport
             /* will be uncommented when this functionality
              * will be available across the application in up-coming PRs
             showDecimalNumber
