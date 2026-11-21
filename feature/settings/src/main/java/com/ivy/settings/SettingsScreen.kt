@@ -47,13 +47,13 @@ import com.ivy.legacy.Constants
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
+import com.ivy.navigation.AppearanceScreen
+import com.ivy.navigation.SmsReviewScreen
 import com.ivy.navigation.AttributionsScreen
-import com.ivy.navigation.ContributorsScreen
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.Navigation
-import com.ivy.navigation.ReleasesScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.ui.R
@@ -193,9 +193,6 @@ private fun BoxWithConstraintsScope.UI(
 
                 val rootScreen = rootScreen()
                 Text(
-                    modifier = Modifier.clickable {
-                        nav.navigateTo(ReleasesScreen)
-                    },
                     text = "${rootScreen.buildVersionName} (${rootScreen.buildVersionCode})",
                     style = UI.typo.nC.style(
                         color = UI.colors.gray,
@@ -410,16 +407,6 @@ private fun BoxWithConstraintsScope.UI(
 
             val rootScreen = rootScreen()
             SettingsPrimaryButton(
-                icon = R.drawable.ic_custom_star_m,
-                text = stringResource(R.string.rate_us_on_google_play),
-                backgroundGradient = GradientIvy
-            ) {
-                rootScreen.reviewIvyWallet(dismissReviewCard = false)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            SettingsPrimaryButton(
                 icon = R.drawable.ic_custom_family_m,
                 text = stringResource(R.string.share_ivy_wallet),
                 backgroundGradient = Gradient.solid(Red3)
@@ -452,10 +439,6 @@ private fun BoxWithConstraintsScope.UI(
 
             Spacer(Modifier.height(12.dp))
 
-            Releases(nav = nav)
-
-            Spacer(Modifier.height(12.dp))
-
             ReportBug()
 
             Spacer(Modifier.height(12.dp))
@@ -471,7 +454,11 @@ private fun BoxWithConstraintsScope.UI(
 
             Spacer(Modifier.height(12.dp))
 
-            Contributors(nav = nav)
+            Appearance()
+
+            Spacer(Modifier.height(12.dp))
+
+            MessageImport()
 
             Spacer(Modifier.height(12.dp))
 
@@ -708,24 +695,28 @@ private fun ContactSupport() {
 }
 
 @Composable
-private fun Releases(nav: Navigation) {
+private fun MessageImport() {
+    val nav = navigation()
+
     SettingsDefaultButton(
-        icon = R.drawable.ic_vue_money_tag,
-        text = stringResource(R.string.releases),
-        iconPadding = 8.dp
+        icon = R.drawable.ic_vue_messages_msgs,
+        text = stringResource(R.string.import_from_messages),
+        iconPadding = 6.dp
     ) {
-        nav.navigateTo(ReleasesScreen)
+        nav.navigateTo(SmsReviewScreen)
     }
 }
 
 @Composable
-private fun Contributors(nav: Navigation) {
+private fun Appearance() {
+    val nav = navigation()
+
     SettingsDefaultButton(
-        icon = R.drawable.ic_vue_people_people,
-        text = stringResource(R.string.project_contributors),
-        iconPadding = 8.dp
+        icon = R.drawable.ic_vue_design_color_swatch,
+        text = stringResource(R.string.appearance),
+        iconPadding = 6.dp
     ) {
-        nav.navigateTo(ContributorsScreen)
+        nav.navigateTo(AppearanceScreen)
     }
 }
 
