@@ -42,17 +42,42 @@ object DefaultRules {
         rules = listOf(
             SmsRule(
                 id = "in.generic.upi.debit",
-                bodyPattern = """(?<currency>rs\.?|inr|₹)\s?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?:has been\s+)?debited\s+from\s+(?:a/c|ac|account)\s*(?<account>[x*\d]+).{0,40}?(?:to|towards)\s+(?<payee>[^.\n]{2,40})""",
+                bodyPattern = CURRENCY_INR + AMOUNT +
+                    """\s+(?:has been\s+)?debited\s+from\s+""" + ACCOUNT +
+                    """.{0,40}?(?:to|towards)\s+(?<payee>[^.\n]{2,40})""",
                 direction = "expense",
                 currency = "INR",
                 confidence = 0.95,
             ),
             SmsRule(
                 id = "in.generic.upi.credit",
-                bodyPattern = """(?<currency>rs\.?|inr|₹)\s?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?:has been\s+)?credited\s+(?:to\s+)?(?:a/c|ac|account)\s*(?<account>[x*\d]+).{0,40}?(?:from|by)\s+(?<payee>[^.\n]{2,40})""",
+                bodyPattern = CURRENCY_INR + AMOUNT +
+                    """\s+(?:has been\s+)?credited\s+(?:to\s+)?""" + ACCOUNT +
+                    """.{0,40}?(?:from|by)\s+(?<payee>[^.\n]{2,40})""",
                 direction = "income",
                 currency = "INR",
                 confidence = 0.95,
+            ),
+            // Bank of Baroda and others word a UPI payment as a transfer out
+            // of the account, and mask the account with dots rather than Xs:
+            // "Rs.149.00 transferred from A/c ...1234 to:UPI/533012345678".
+            // No shipped rule had a "transferred" shape and none accepted a
+            // dot-masked account, so every message of this form was dropped -
+            // which from the outside is indistinguishable from the bank not
+            // being supported at all.
+            SmsRule(
+                id = "in.transfer.out",
+                bodyPattern = CURRENCY + AMOUNT +
+                    """\s+(?:is\s+|has\s+been\s+)?transferred\s+from\s+""" + ACCOUNT,
+                direction = "expense",
+                confidence = 0.93,
+            ),
+            SmsRule(
+                id = "in.transfer.in",
+                bodyPattern = CURRENCY + AMOUNT +
+                    """\s+(?:is\s+|has\s+been\s+)?(?:transferred|credited)\s+to\s+""" + ACCOUNT,
+                direction = "income",
+                confidence = 0.92,
             ),
             // Verb-first wordings, where the account comes first and the amount
             // follows the verb: SBI ("A/C X1234 debited by 150.0", no currency
@@ -88,7 +113,9 @@ object DefaultRules {
             ),
             SmsRule(
                 id = "in.card.spend",
-                bodyPattern = """(?<currency>rs\.?|inr|₹)\s?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+spent\s+(?:on|using)\s+.{0,30}?card\s*(?:ending\s*)?(?<account>[x*\d]+).{0,30}?(?:at|on)\s+(?<payee>[^.\n]{2,40})""",
+                bodyPattern = CURRENCY_INR + AMOUNT +
+                    """\s+spent\s+(?:on|using)\s+.{0,30}?""" + CARD +
+                    """.{0,30}?(?:at|on)\s+(?<payee>[^.\n]{2,40})""",
                 direction = "expense",
                 currency = "INR",
                 confidence = 0.92,
@@ -97,15 +124,15 @@ object DefaultRules {
             // "Credit Card ending 4321 for Rs.1,250.00 at BLUE TOKAI".
             SmsRule(
                 id = "in.card.usage",
-                bodyPattern = """card\s+(?:ending\s+(?:with\s+)?|no\.?\s*|xx)?""" +
-                    """(?<account>[x*\d]{3,})\s+(?:for|with)\s+""" + CURRENCY + AMOUNT +
+                bodyPattern = CARD + """\s+(?:for|with)\s+""" + CURRENCY + AMOUNT +
                     """(?:\s+at\s+(?<payee>[^.\n]{2,40}))?""",
                 direction = "expense",
                 confidence = 0.9,
             ),
             SmsRule(
                 id = "in.atm.withdrawal",
-                bodyPattern = """(?<currency>rs\.?|inr|₹)\s?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?:withdrawn|w/d)\s+from\s+.{0,20}?(?:a/c|ac|account)\s*(?<account>[x*\d]+)""",
+                bodyPattern = CURRENCY_INR + AMOUNT +
+                    """\s+(?:withdrawn|w/d)\s+from\s+.{0,20}?""" + ACCOUNT,
                 direction = "expense",
                 currency = "INR",
                 confidence = 0.9,
@@ -186,10 +213,24 @@ object DefaultRules {
      * parts are named once here: a rule then reads as the shape it recognises
      * rather than as a wall of escapes.
      */
+    /**
+     * A masked account or card number as the banks write it.
+     *
+     * The mask characters are optional and may be dots: `XX1234`, `x1234`,
+     * `...1234`, `1234`. Requiring `[x*\d]` alone, as this used to, silently
+     * failed on every bank that masks with dots.
+     */
+    private const val ACCOUNT_DIGITS = """(?:[x*.]\s?){0,8}\d{2,}"""
+
     private const val ACCOUNT =
-        """\b(?:a/c|acct|account|ac)\.?\s*(?:no\.?\s*)?(?<account>[x*\d]{3,})"""
+        """\b(?:a/c|acct|acc|account|ac)\.?\s*(?:no\.?\s*)?(?<account>$ACCOUNT_DIGITS)"""
+
+    private const val CARD =
+        """card\s*(?:no\.?|number|ending(?:\s*with)?)?\s*(?<account>$ACCOUNT_DIGITS)"""
 
     private const val CURRENCY = """(?<currency>rs\.?|inr|₹|\$|€|£)\s?"""
+
+    private const val CURRENCY_INR = """(?<currency>rs\.?|inr|₹)\s?"""
 
     private const val OPTIONAL_CURRENCY = """(?:(?<currency>rs\.?|inr|₹|\$|€|£)\s?)?"""
 

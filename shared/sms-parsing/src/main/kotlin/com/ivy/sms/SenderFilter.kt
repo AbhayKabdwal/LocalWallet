@@ -25,6 +25,12 @@ object SenderFilter {
         "PNBSMS", "BOIIND", "CANBNK", "UNIONB", "CBSSBI", "FEDBNK", "RBLBNK", "AUBANK",
         "BANDHN", "CITIBK", "HSBCIN", "SCBANK", "DBSBNK", "EQUTAS", "UCOBNK", "IOBCHN",
         "CENTBK", "MAHABK", "KARBNK", "KVBANK", "TMBANK", "DCBBNK", "ESAFBK", "JANAFS",
+        // Bank of Baroda, under every header it sends from. It was missing
+        // from this list entirely, so its messages only ever got through on
+        // the body heuristic - and that heuristic rejected the wording it
+        // actually uses.
+        "BOBTXN", "BOBSMS", "BOBIND", "BOBBNK", "BOBCRD", "BOBALERT", "CBSBOB", "BARODA",
+        "BOBIBN", "BOBUPI",
         // India - wallets / UPI
         "PAYTM", "PHONPE", "PHONEPE", "GPAY", "AMZNPAY", "MOBIKW", "FREECH", "SLICEIT",
         "CRED", "JUPITR", "FICRED", "ONECRD", "BAJAJF",

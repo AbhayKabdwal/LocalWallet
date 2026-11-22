@@ -19,6 +19,7 @@ object SmsImportModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): SmsImportDatabase =
         Room.databaseBuilder(context, SmsImportDatabase::class.java, SmsImportDatabase.NAME)
+            .addMigrations(SmsImportDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
 

@@ -15,6 +15,7 @@ import com.ivy.smsimport.data.SmsImportDao
 import com.ivy.smsimport.data.SmsImportLogEntity
 import com.ivy.smsimport.data.SmsInboxSource
 import com.ivy.smsimport.data.SmsPendingEntity
+import com.ivy.smsimport.domain.BalanceCheckUseCase
 import com.ivy.smsimport.domain.CommitSmsTransactionUseCase
 import com.ivy.smsimport.domain.CommitSmsTransactionUseCase.Companion.merchantKey
 import com.ivy.smsimport.domain.ScanMessagesUseCase
@@ -25,6 +26,10 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.text.DateFormat
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
@@ -36,6 +41,7 @@ class SmsReviewViewModel @Inject constructor(
     private val inbox: SmsInboxSource,
     private val scanMessages: ScanMessagesUseCase,
     private val commit: CommitSmsTransactionUseCase,
+    private val balanceCheck: BalanceCheckUseCase,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
 ) : ComposeViewModel<SmsReviewState, SmsReviewEvent>() {
@@ -50,6 +56,9 @@ class SmsReviewViewModel @Inject constructor(
 
     private var suggestedAccountId by mutableStateOf<UUID?>(null)
     private var suggestedCategoryId by mutableStateOf<UUID?>(null)
+
+    private var drifts by mutableStateOf<ImmutableList<BalanceDrift>>(persistentListOf())
+    private var adjustmentCategoryId by mutableStateOf<UUID?>(null)
 
     private var autoScanned = false
 
@@ -72,6 +81,11 @@ class SmsReviewViewModel @Inject constructor(
         // Suggestions come from what the user chose last time for this card /
         // merchant, which is what makes repeat reviews fast.
         LaunchedSuggestions(current)
+        // Balance checks run only once the queue is empty. Asking earlier would
+        // compare the wallet against the bank while transactions the user is
+        // about to accept are still missing from it, and "correct" the
+        // difference they were in the middle of importing.
+        LaunchedBalanceChecks(queueEmpty = current == null && !scanning)
 
         return SmsReviewState(
             permissionGranted = permissionGranted,
@@ -83,6 +97,8 @@ class SmsReviewViewModel @Inject constructor(
             categories = categories,
             suggestedAccountId = suggestedAccountId,
             suggestedCategoryId = suggestedCategoryId,
+            balanceDrifts = drifts,
+            suggestedAdjustmentCategoryId = adjustmentCategoryId,
             error = error,
         )
     }
@@ -99,9 +115,18 @@ class SmsReviewViewModel @Inject constructor(
         }
     }
 
+    @Composable
+    private fun LaunchedBalanceChecks(queueEmpty: Boolean) {
+        androidx.compose.runtime.LaunchedEffect(queueEmpty) {
+            if (queueEmpty) refreshBalanceChecks() else drifts = persistentListOf()
+        }
+    }
+
     override fun onEvent(event: SmsReviewEvent) {
         when (event) {
             SmsReviewEvent.Scan -> scan()
+            is SmsReviewEvent.ApplyBalance -> applyBalance(event)
+            is SmsReviewEvent.DismissBalance -> dismissBalance(event.accountHint)
             SmsReviewEvent.PermissionGranted -> {
                 permissionGranted = true
                 scan()
@@ -198,8 +223,71 @@ class SmsReviewViewModel @Inject constructor(
             categories = categoryRepository.findAll()
                 .map { CategoryOption(id = it.id.value, name = it.name.value) }
                 .toImmutableList()
+            // A correction is not really spending, so it wants the catch-all
+            // category if the user has one rather than a guess at a real one.
+            adjustmentCategoryId = categories
+                .firstOrNull { option ->
+                    adjustmentCategoryNames.any { option.name.lowercase().contains(it) }
+                }
+                ?.id
         }
     }
 
+    private fun refreshBalanceChecks() {
+        viewModelScope.launch {
+            drifts = runCatching { balanceCheck.drifts() }
+                .getOrDefault(emptyList())
+                .filterNot { it.dismissed }
+                .map { it.toUi() }
+                .toImmutableList()
+        }
+    }
+
+    private fun applyBalance(event: SmsReviewEvent.ApplyBalance) {
+        viewModelScope.launch {
+            balanceCheck.reconcile(
+                hint = event.accountHint,
+                accountId = event.accountId,
+                categoryId = event.categoryId,
+            ).fold(
+                ifLeft = { error = it },
+                ifRight = { refreshBalanceChecks() },
+            )
+        }
+    }
+
+    private fun dismissBalance(hint: String) {
+        viewModelScope.launch {
+            balanceCheck.dismiss(hint)
+            refreshBalanceChecks()
+        }
+    }
+
+    private fun BalanceCheckUseCase.Drift.toUi() = BalanceDrift(
+        accountHint = accountHint,
+        accountId = accountId,
+        accountName = accountName,
+        bankBalance = bankBalance.toMoney(),
+        appBalance = appBalance.toMoney(),
+        difference = difference.abs().toMoney(),
+        walletIsBehind = difference > BigDecimal.ZERO,
+        currency = currency.orEmpty(),
+        observed = dateFormat.format(Date(observedAtMillis)),
+    )
+
+    private fun BigDecimal.toMoney(): String =
+        setScale(MONEY_SCALE, RoundingMode.HALF_UP).toPlainString()
+
     private fun uuidOrNull(raw: String): UUID? = runCatching { UUID.fromString(raw) }.getOrNull()
+
+    companion object {
+        private const val MONEY_SCALE = 2
+        private val dateFormat: DateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM)
+
+        /**
+         * Names people give the category that means "not really a thing I
+         * bought", in rough order of how clearly they mean it.
+         */
+        private val adjustmentCategoryNames = listOf("misc", "other", "adjust", "unknown")
+    }
 }

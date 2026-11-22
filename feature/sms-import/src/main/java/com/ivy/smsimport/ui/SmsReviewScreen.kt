@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ivy.navigation.SmsFormatsScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.smsimport.domain.ScanMessagesUseCase
@@ -95,7 +96,7 @@ private fun SmsReviewUi(
             when {
                 !state.permissionGranted -> PermissionRationale(onEvent)
                 state.scanning && state.current == null -> Loading()
-                state.current == null -> Empty(onEvent)
+                state.current == null -> Empty(state = state, onEvent = onEvent)
                 else -> ReviewCard(state = state, onEvent = onEvent)
             }
         }
@@ -146,20 +147,112 @@ private fun Loading() {
 }
 
 @Composable
-private fun Empty(onEvent: (SmsReviewEvent) -> Unit) {
+private fun Empty(
+    state: SmsReviewState,
+    onEvent: (SmsReviewEvent) -> Unit,
+) {
+    val nav = navigation()
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Spacer(Modifier.height(24.dp))
         Text("Nothing to review", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
         Text(
             text = "New bank messages will show up here.",
             style = MaterialTheme.typography.bodySmall,
         )
-        Spacer(Modifier.height(16.dp))
         OutlinedButton(onClick = { onEvent(SmsReviewEvent.Scan) }) { Text("Scan now") }
+
+        // Reconciliation belongs here, after the queue has drained: the wallet
+        // can only be compared with the bank once everything the bank told us
+        // about has actually been entered.
+        state.balanceDrifts.forEach { drift ->
+            BalanceCheckCard(drift = drift, state = state, onEvent = onEvent)
+        }
+
+        TextButton(onClick = { nav.navigateTo(SmsFormatsScreen) }) {
+            Text("Messages missing? Teach the app your bank's format")
+        }
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+/**
+ * Offers to write the gap between the wallet and the bank off in one go.
+ *
+ * The figures are shown side by side, and the correction is described as the
+ * transaction it will become, because the alternative - a button that silently
+ * rewrites an account's balance - is the kind of thing that makes people stop
+ * trusting a money app.
+ */
+@Composable
+private fun BalanceCheckCard(
+    drift: BalanceDrift,
+    state: SmsReviewState,
+    onEvent: (SmsReviewEvent) -> Unit,
+) {
+    var categoryId by remember(drift.accountHint) {
+        mutableStateOf(state.suggestedAdjustmentCategoryId)
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Balance check",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "On ${drift.observed} your bank said the account ending " +
+                    "${drift.accountHint} held ${drift.currency} ${drift.bankBalance}. " +
+                    "${drift.accountName} holds ${drift.currency} ${drift.appBalance} " +
+                    "here - a difference of ${drift.currency} ${drift.difference}.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = if (drift.walletIsBehind) {
+                    "Updating adds income of ${drift.difference}, titled " +
+                        "\"Balance adjustment\", so the two agree."
+                } else {
+                    "Updating adds an expense of ${drift.difference}, titled " +
+                        "\"Balance adjustment\", so the two agree."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Picker(
+                label = "Category for the adjustment (optional)",
+                options = state.categories.map { it.id to it.name },
+                selectedId = categoryId,
+                onSelect = { categoryId = it },
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        onEvent(
+                            SmsReviewEvent.ApplyBalance(
+                                accountHint = drift.accountHint,
+                                accountId = drift.accountId,
+                                categoryId = categoryId,
+                            ),
+                        )
+                    },
+                ) { Text("Update balance") }
+
+                TextButton(
+                    onClick = { onEvent(SmsReviewEvent.DismissBalance(drift.accountHint)) },
+                ) { Text("Not now") }
+            }
+        }
     }
 }
 
