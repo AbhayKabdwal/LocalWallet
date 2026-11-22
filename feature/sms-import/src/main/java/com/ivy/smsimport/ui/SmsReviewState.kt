@@ -11,6 +11,27 @@ data class AccountOption(val id: UUID, val name: String)
 @Immutable
 data class CategoryOption(val id: UUID, val name: String)
 
+/**
+ * An account whose balance in the wallet disagrees with the bank's last word
+ * on it.
+ *
+ * Pre-formatted for display: the screen should not be doing arithmetic on
+ * money, and the sign of [difference] has already decided whether the fix is
+ * an income or an expense.
+ */
+@Immutable
+data class BalanceDrift(
+    val accountHint: String,
+    val accountId: UUID,
+    val accountName: String,
+    val bankBalance: String,
+    val appBalance: String,
+    val difference: String,
+    val walletIsBehind: Boolean,
+    val currency: String,
+    val observed: String,
+)
+
 @Immutable
 data class SmsReviewState(
     val permissionGranted: Boolean,
@@ -22,6 +43,8 @@ data class SmsReviewState(
     val categories: ImmutableList<CategoryOption>,
     val suggestedAccountId: UUID?,
     val suggestedCategoryId: UUID?,
+    val balanceDrifts: ImmutableList<BalanceDrift>,
+    val suggestedAdjustmentCategoryId: UUID?,
     val error: String?,
 ) {
     val total: Int get() = remaining + reviewedThisSession
@@ -43,4 +66,13 @@ sealed interface SmsReviewEvent {
     data object IgnoreSender : SmsReviewEvent
     data object AddAllHighConfidence : SmsReviewEvent
     data object DismissError : SmsReviewEvent
+
+    /** Write the gap between the wallet and the bank off as one transaction. */
+    data class ApplyBalance(
+        val accountHint: String,
+        val accountId: UUID,
+        val categoryId: UUID?,
+    ) : SmsReviewEvent
+
+    data class DismissBalance(val accountHint: String) : SmsReviewEvent
 }

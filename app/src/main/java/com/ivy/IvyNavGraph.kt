@@ -18,8 +18,12 @@ import com.ivy.loans.loandetails.LoanDetailsScreen
 import com.ivy.main.MainScreen
 import com.ivy.appearance.AppearanceScreenImpl
 import com.ivy.navigation.AppearanceScreen
+import com.ivy.navigation.SmsFormatsScreen
 import com.ivy.navigation.SmsReviewScreen
+import com.ivy.navigation.SmsTeachFormatScreen
 import com.ivy.smsimport.ui.SmsReviewScreenImpl
+import com.ivy.smsimport.ui.formats.SmsFormatsScreenImpl
+import com.ivy.smsimport.ui.formats.SmsTeachFormatScreenImpl
 import com.ivy.navigation.AttributionsScreen
 import com.ivy.navigation.BalanceScreen
 import com.ivy.navigation.BudgetScreen
@@ -85,5 +89,7 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         DisclaimerScreen -> DisclaimerScreenImpl()
         AppearanceScreen -> AppearanceScreenImpl()
         SmsReviewScreen -> SmsReviewScreenImpl()
+        SmsFormatsScreen -> SmsFormatsScreenImpl()
+        is SmsTeachFormatScreen -> SmsTeachFormatScreenImpl(screen = screen)
     }
 }

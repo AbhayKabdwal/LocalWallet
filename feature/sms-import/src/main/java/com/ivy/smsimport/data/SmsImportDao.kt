@@ -6,6 +6,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,6 +31,9 @@ interface SmsImportDao {
 
     @Query("SELECT COUNT(*) FROM sms_pending")
     fun pendingCount(): Flow<Int>
+
+    @Query("SELECT sourceId FROM sms_pending")
+    suspend fun pendingIds(): List<String>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addPending(items: List<SmsPendingEntity>)
@@ -72,6 +77,46 @@ interface SmsImportDao {
 
     @Query("DELETE FROM sms_blocked_sender WHERE sender = :sender")
     suspend fun unblockSender(sender: String)
+
+    // ---- formats the user taught ----
+
+    @Query("SELECT * FROM sms_template ORDER BY createdAtMillis DESC")
+    fun templates(): Flow<List<SmsTemplateEntity>>
+
+    @Query("SELECT * FROM sms_template WHERE enabled = 1")
+    suspend fun enabledTemplates(): List<SmsTemplateEntity>
+
+    @Query("SELECT * FROM sms_template WHERE id = :id")
+    suspend fun template(id: String): SmsTemplateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveTemplate(entity: SmsTemplateEntity)
+
+    @Query("DELETE FROM sms_template WHERE id = :id")
+    suspend fun deleteTemplate(id: String)
+
+    @Query("UPDATE sms_template SET enabled = :enabled WHERE id = :id")
+    suspend fun setTemplateEnabled(id: String, enabled: Boolean)
+
+    // ---- bank-stated balances ----
+
+    @Query("SELECT * FROM sms_balance_snapshot ORDER BY observedAtMillis DESC")
+    fun balanceSnapshots(): Flow<List<SmsBalanceSnapshotEntity>>
+
+    @Query("SELECT * FROM sms_balance_snapshot ORDER BY observedAtMillis DESC")
+    suspend fun allBalanceSnapshots(): List<SmsBalanceSnapshotEntity>
+
+    @Query("SELECT * FROM sms_balance_snapshot WHERE accountHint = :hint")
+    suspend fun balanceSnapshot(hint: String): SmsBalanceSnapshotEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveBalanceSnapshot(entity: SmsBalanceSnapshotEntity)
+
+    @Query("UPDATE sms_balance_snapshot SET settledBalance = :balance WHERE accountHint = :hint")
+    suspend fun settleBalance(hint: String, balance: String)
+
+    @Query("DELETE FROM sms_balance_snapshot")
+    suspend fun clearBalanceSnapshots()
 }
 
 /**
@@ -89,8 +134,10 @@ interface SmsImportDao {
         SmsAccountMapEntity::class,
         SmsCategoryRuleEntity::class,
         SmsBlockedSenderEntity::class,
+        SmsTemplateEntity::class,
+        SmsBalanceSnapshotEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class SmsImportDatabase : RoomDatabase() {
@@ -98,5 +145,39 @@ abstract class SmsImportDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "ivy_sms_import.db"
+
+        /**
+         * Adds the taught-format and bank-balance tables.
+         *
+         * Written out rather than left to the destructive fallback: the
+         * mappings in v1 are what stop review from asking the same account
+         * question every week, and dropping them to add two unrelated tables
+         * would be a pointless regression for anyone upgrading.
+         */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sms_template` (" +
+                        "`id` TEXT NOT NULL, " +
+                        "`label` TEXT NOT NULL, " +
+                        "`senderFragment` TEXT, " +
+                        "`template` TEXT NOT NULL, " +
+                        "`direction` TEXT NOT NULL, " +
+                        "`currency` TEXT, " +
+                        "`enabled` INTEGER NOT NULL, " +
+                        "`createdAtMillis` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`id`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sms_balance_snapshot` (" +
+                        "`accountHint` TEXT NOT NULL, " +
+                        "`balance` TEXT NOT NULL, " +
+                        "`currency` TEXT, " +
+                        "`observedAtMillis` INTEGER NOT NULL, " +
+                        "`settledBalance` TEXT, " +
+                        "PRIMARY KEY(`accountHint`))",
+                )
+            }
+        }
     }
 }

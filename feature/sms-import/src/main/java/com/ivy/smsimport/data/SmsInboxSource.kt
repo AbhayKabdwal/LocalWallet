@@ -28,8 +28,26 @@ class SmsInboxSource @Inject constructor(
      * Capped by [limit] because a first scan on a multi-year inbox would
      * otherwise do thousands of regex passes in one go.
      */
+    fun fetchSince(sinceMillis: Long, limit: Int = DEFAULT_LIMIT): List<RawMessage> =
+        fetch(sinceMillis, limit, newestFirst = false)
+
+    /**
+     * Messages received after [sinceMillis], newest first.
+     *
+     * The ordering is not cosmetic: the cap means the two orders return
+     * different messages on a long window, and when the question is "which
+     * formats can this app not read", the answer has to come from what the
+     * bank is sending now rather than from the oldest page of history.
+     */
+    fun fetchRecent(sinceMillis: Long, limit: Int = DEFAULT_LIMIT): List<RawMessage> =
+        fetch(sinceMillis, limit, newestFirst = true)
+
     @Suppress("TooGenericExceptionCaught")
-    fun fetchSince(sinceMillis: Long, limit: Int = DEFAULT_LIMIT): List<RawMessage> {
+    private fun fetch(
+        sinceMillis: Long,
+        limit: Int,
+        newestFirst: Boolean,
+    ): List<RawMessage> {
         if (!hasPermission()) return emptyList()
 
         val projection = arrayOf(
@@ -44,7 +62,7 @@ class SmsInboxSource @Inject constructor(
                 projection,
                 "${Telephony.Sms.DATE} > ?",
                 arrayOf(sinceMillis.toString()),
-                "${Telephony.Sms.DATE} ASC LIMIT $limit",
+                "${Telephony.Sms.DATE} ${if (newestFirst) "DESC" else "ASC"} LIMIT $limit",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(Telephony.Sms._ID)
                 val addressCol = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)

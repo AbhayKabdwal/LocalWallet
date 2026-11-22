@@ -81,3 +81,42 @@ data class SmsCategoryRuleEntity(
 data class SmsBlockedSenderEntity(
     @PrimaryKey val sender: String,
 )
+
+/**
+ * A message format the user taught the app.
+ *
+ * Stored as the marked-up text rather than as a compiled regex so it stays
+ * editable: when the bank rewords its alerts next quarter, the user adjusts
+ * the message they can read instead of a pattern they cannot.
+ */
+@Keep
+@Entity(tableName = "sms_template")
+data class SmsTemplateEntity(
+    @PrimaryKey val id: String,
+    val label: String,
+    val senderFragment: String?,
+    val template: String,
+    val direction: String,
+    val currency: String?,
+    val enabled: Boolean,
+    val createdAtMillis: Long,
+)
+
+/**
+ * The last balance a bank stated for an account, and the figure the user has
+ * already dealt with.
+ *
+ * Only the number is kept - no message text - because this exists for one
+ * question: has the wallet drifted from the real account? [settledBalance]
+ * records the answer the user gave, so agreeing once, or saying "not now",
+ * does not turn into a prompt on every open.
+ */
+@Keep
+@Entity(tableName = "sms_balance_snapshot")
+data class SmsBalanceSnapshotEntity(
+    @PrimaryKey val accountHint: String,
+    val balance: String,
+    val currency: String?,
+    val observedAtMillis: Long,
+    val settledBalance: String?,
+)

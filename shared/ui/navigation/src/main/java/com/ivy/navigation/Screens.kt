@@ -143,3 +143,16 @@ data object DisclaimerScreen : Screen
 data object AppearanceScreen : Screen
 
 data object SmsReviewScreen : Screen
+
+/** The message formats the user has taught the app. */
+data object SmsFormatsScreen : Screen
+
+/**
+ * Teaching the app a bank's wording, or editing a format already taught.
+ *
+ * Only the id travels through navigation - never message text, which stays in
+ * the screen's own state.
+ */
+data class SmsTeachFormatScreen(
+    val templateId: String? = null,
+) : Screen

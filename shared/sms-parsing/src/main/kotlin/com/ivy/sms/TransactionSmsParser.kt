@@ -11,15 +11,34 @@ import java.math.BigDecimal
  */
 class TransactionSmsParser(
     private val ruleSet: SmsRuleSet = DefaultRules.ruleSet,
+    /**
+     * Formats the user taught the app, tried before the shipped ones.
+     *
+     * They also skip the sender filter and most of [MessageClassifier]: a
+     * template exists precisely because the built-in heuristics got this bank's
+     * messages wrong, so letting those heuristics veto it would defeat the
+     * feature. Only [MessageClassifier.hardReject] still applies.
+     */
+    userRules: List<SmsRule> = emptyList(),
 ) {
-    private val compiled: List<Pair<SmsRule, Regex>> = ruleSet.rules.map { rule ->
-        rule to Regex(
-            rule.bodyPattern,
-            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
-        )
+    private val compiled: List<Pair<SmsRule, Regex>> = ruleSet.rules.map(::compile)
+    private val compiledUserRules: List<Pair<SmsRule, Regex>> = userRules.mapNotNull { rule ->
+        runCatching { compile(rule) }.getOrNull()
     }
 
+    private fun compile(rule: SmsRule): Pair<SmsRule, Regex> = rule to Regex(
+        rule.bodyPattern,
+        setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+    )
+
+    @Suppress("ReturnCount")
     fun parse(message: RawMessage): ParseResult {
+        MessageClassifier.hardReject(message.body)?.let {
+            return ParseResult.Rejected(it)
+        }
+
+        firstMatch(compiledUserRules, message)?.let { return ParseResult.Matched(it) }
+
         if (!SenderFilter.accepts(message.sender, message.body)) {
             return ParseResult.Rejected(RejectReason.NotFromKnownSender)
         }
@@ -27,35 +46,47 @@ class TransactionSmsParser(
             return ParseResult.Rejected(it)
         }
 
-        val body = message.body
-        for ((rule, regex) in compiled) {
-            if (rule.senderPattern != null &&
-                !SenderFilter.normalize(message.sender).contains(rule.senderPattern.uppercase())
-            ) {
-                continue
-            }
-            val match = regex.find(body) ?: continue
-            val amount = match.groupOrNull("amount")?.let(::parseAmount) ?: continue
+        return firstMatch(compiled, message)
+            ?.let(ParseResult::Matched)
+            ?: ParseResult.Rejected(RejectReason.NoRuleMatched)
+    }
 
-            return ParseResult.Matched(
-                ParsedTransaction(
-                    direction = if (rule.direction.equals("income", ignoreCase = true)) {
-                        TxnDirection.Income
-                    } else {
-                        TxnDirection.Expense
-                    },
-                    amount = amount,
-                    currency = rule.currency
-                        ?: match.groupOrNull("currency")?.let(::normalizeCurrency),
-                    accountHint = match.groupOrNull("account")?.let(::normalizeAccount),
-                    merchant = match.groupOrNull("payee")?.let(::cleanMerchant),
-                    reference = extractReference(body),
-                    confidence = rule.confidence,
-                    ruleId = rule.id,
-                ),
-            )
+    private fun firstMatch(
+        rules: List<Pair<SmsRule, Regex>>,
+        message: RawMessage,
+    ): ParsedTransaction? = rules
+        .asSequence()
+        .filter { (rule, _) -> rule.appliesTo(message.sender) }
+        .mapNotNull { (rule, regex) ->
+            regex.find(message.body)?.let { match -> rule.read(match, message.body) }
         }
-        return ParseResult.Rejected(RejectReason.NoRuleMatched)
+        .firstOrNull()
+
+    private fun SmsRule.appliesTo(sender: String): Boolean = senderPattern == null ||
+        SenderFilter.normalize(sender).contains(senderPattern.uppercase())
+
+    private fun SmsRule.read(match: MatchResult, body: String): ParsedTransaction? {
+        val amount = match.groupOrNull("amount")?.let(::parseAmount) ?: return null
+        return ParsedTransaction(
+            direction = if (direction.equals("income", ignoreCase = true)) {
+                TxnDirection.Income
+            } else {
+                TxnDirection.Expense
+            },
+            amount = amount,
+            currency = currency ?: match.groupOrNull("currency")?.let(::normalizeCurrency),
+            accountHint = match.groupOrNull("account")?.let(::normalizeAccount)
+                ?: MessageFacts.accountHint(body),
+            merchant = match.groupOrNull("payee")?.let(::cleanMerchant),
+            reference = extractReference(body),
+            confidence = confidence,
+            ruleId = id,
+            // A rule that names a balance group wins over the generic footer
+            // scan, because the rule knows which of two stated balances this
+            // bank means.
+            balance = match.groupOrNull("balance")?.let(::parseAmount)
+                ?: MessageFacts.balance(body)?.amount,
+        )
     }
 
     private fun MatchResult.groupOrNull(name: String): String? = try {
@@ -109,6 +140,10 @@ class TransactionSmsParser(
             .replace(Regex("""\s{2,}"""), " ")
             .trim()
             .takeIf { it.length in 2..60 }
+            // A payee group can land on a reference number instead of a name
+            // ("...credited to A/c ...1234 thru UPI/CR/5330.../ by 1234"). A
+            // title of bare digits is worse than no title.
+            ?.takeIf { name -> name.any(Char::isLetter) }
 
         fun extractReference(body: String): String? =
             referencePattern.find(body)?.groupValues?.getOrNull(1)

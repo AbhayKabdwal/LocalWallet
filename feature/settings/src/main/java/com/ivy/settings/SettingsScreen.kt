@@ -48,6 +48,7 @@ import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.AppearanceScreen
+import com.ivy.navigation.SmsFormatsScreen
 import com.ivy.navigation.SmsReviewScreen
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
@@ -394,6 +395,10 @@ private fun BoxWithConstraintsScope.UI(
 
             Spacer(Modifier.height(12.dp))
 
+            MessageFormats()
+
+            Spacer(Modifier.height(12.dp))
+
             TCAndPrivacyPolicy()
         }
 
@@ -646,6 +651,24 @@ private fun MessageImport() {
         iconPadding = 6.dp
     ) {
         nav.navigateTo(SmsReviewScreen)
+    }
+}
+
+/**
+ * Reachable from settings as well as from the review screen: someone whose
+ * bank is being ignored sees an empty review queue, which is the one place
+ * they have no reason to look for the fix.
+ */
+@Composable
+private fun MessageFormats() {
+    val nav = navigation()
+
+    SettingsDefaultButton(
+        icon = R.drawable.ic_vue_messages_msgs,
+        text = stringResource(R.string.message_formats),
+        iconPadding = 6.dp
+    ) {
+        nav.navigateTo(SmsFormatsScreen)
     }
 }
 

@@ -165,6 +165,38 @@ object MessageClassifier {
         RegexOption.IGNORE_CASE,
     )
 
+    /**
+     * The guards that still apply to a format the user taught us.
+     *
+     * A user template deliberately skips the rest of this classifier - that is
+     * the point of teaching a format the shipped rules reject. These three
+     * cannot be skipped: a one-time password read as a transaction corrupts the
+     * balance with the user's own blessing, and a failed payment or a collect
+     * request describes money that never moved.
+     */
+    @Suppress("ReturnCount")
+    fun hardReject(body: String): RejectReason? {
+        val text = body.lowercase()
+        if (otpMarkers.any { it in text }) return RejectReason.LooksLikeOtp
+        if (requestMarkers.any { it in text }) return RejectReason.PaymentRequest
+        if (failedMarkers.any { it in text }) return RejectReason.FailedOrReversed
+        if (futureMarkers.any { it in text }) return RejectReason.FutureOrScheduled
+        return null
+    }
+
+    /**
+     * Wordings that describe money that has not moved yet. Narrower than
+     * [scheduledMarkers] on purpose - "due on" and "reminder" appear in real
+     * debit alerts too, so they are not worth a false reject on a format the
+     * user explicitly asked for.
+     */
+    private val futureMarkers = listOf(
+        "will be debited",
+        "will be deducted",
+        "will be credited",
+        "scheduled for",
+    )
+
     fun classify(body: String): RejectReason? {
         val text = body.lowercase()
 

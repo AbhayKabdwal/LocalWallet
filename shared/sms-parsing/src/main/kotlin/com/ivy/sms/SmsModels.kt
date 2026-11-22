@@ -27,6 +27,14 @@ data class ParsedTransaction(
     val reference: String?,
     val confidence: Double,
     val ruleId: String,
+    /**
+     * The balance the bank stated in the same message, when it did.
+     *
+     * Kept alongside the transaction because it is the only trustworthy way to
+     * tell whether the wallet has drifted from the real account - the user's
+     * opening balance is almost never typed in exactly.
+     */
+    val balance: BigDecimal? = null,
 )
 
 /** Why a message was not turned into a transaction. Useful for debugging rules. */
