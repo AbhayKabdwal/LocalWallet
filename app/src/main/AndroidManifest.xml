@@ -8,6 +8,11 @@
          INTERNET permission, so nothing can be uploaded. The feature is off by
          default and the permission is only requested if the user turns it on.
     -->
+    <!--
+        Optional. Only needed to read bank messages already on the phone;
+        day-to-day capture runs through notification access instead, so the
+        app works fully without ever granting this.
+    -->
     <uses-permission android:name="android.permission.READ_SMS" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -105,6 +110,36 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/wallet_balance_widget_info" />
         </receiver>
+
+        <receiver
+            android:name="com.ivy.widget.messagesync.MessageSyncWidgetReceiver"
+            android:enabled="@bool/glance_appwidget_available"
+            android:exported="true"
+            android:label="@string/message_sync_widget"
+            tools:ignore="instantiatable">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/message_sync_widget_info" />
+        </receiver>
+
+        <!--
+            Reads bank alerts without READ_SMS. BIND_NOTIFICATION_LISTENER_SERVICE
+            is held by the system against this service, not requested by the app,
+            so it adds nothing to the app's permission list; the user grants it
+            once in Settings > Notification access.
+        -->
+        <service
+            android:name="com.ivy.smsimport.notifications.BankNotificationListener"
+            android:exported="true"
+            android:label="@string/read_bank_notifications"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".PaymentTileService"

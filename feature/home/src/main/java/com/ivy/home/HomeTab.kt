@@ -37,6 +37,7 @@ import com.ivy.home.Constants.SWIPE_HORIZONTAL_THRESHOLD
 import com.ivy.home.customerjourney.CustomerJourney
 import com.ivy.smsimport.ui.SmsImportBanner
 import com.ivy.home.customerjourney.CustomerJourneyCardModel
+import com.ivy.home.savings.SavingsGoalsState
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.data.AppBaseData
 import com.ivy.legacy.data.BufferInfo
@@ -56,8 +57,6 @@ import com.ivy.ui.R
 import com.ivy.ui.rememberScrollPositionListState
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.pure.data.IncomeExpensePair
-import com.ivy.wallet.ui.theme.modal.BufferModal
-import com.ivy.wallet.ui.theme.modal.BufferModalData
 import com.ivy.wallet.ui.theme.modal.ChoosePeriodModal
 import com.ivy.wallet.ui.theme.modal.ChoosePeriodModalData
 import com.ivy.wallet.ui.theme.modal.CurrencyModal
@@ -87,7 +86,6 @@ fun BoxWithConstraintsScope.HomeUi(
 ) {
     val ivyContext = ivyWalletCtx()
 
-    var bufferModalData: BufferModalData? by remember { mutableStateOf(null) }
     var currencyModalVisible by remember { mutableStateOf(false) }
     var choosePeriodModal: ChoosePeriodModalData? by remember {
         mutableStateOf(null)
@@ -218,31 +216,18 @@ fun BoxWithConstraintsScope.HomeUi(
         theme = uiState.theme,
         balance = uiState.balance.toDouble(),
         currency = baseCurrency,
-        buffer = uiState.buffer.amount.toDouble(),
+        savingsGoals = SavingsGoalsState(
+            goals = uiState.savingsGoals,
+            currency = baseCurrency,
+        ),
+        onSavingsGoalEvent = { onEvent(HomeEvent.SavingsGoal(it)) },
         onSwitchTheme = {
             onEvent(HomeEvent.SwitchTheme)
         },
         setExpanded = setMoreMenuExpanded,
-        onBufferClick = {
-            bufferModalData = BufferModalData(
-                balance = uiState.balance.toDouble(),
-                currency = baseCurrency,
-                buffer = uiState.buffer.amount.toDouble()
-            )
-        },
         onCurrencyClick = {
             currencyModalVisible = true
         }
-    )
-
-    BufferModal(
-        modal = bufferModalData,
-        dismiss = {
-            bufferModalData = null
-        },
-        onBufferChanged = forward<Double>() then2 {
-            HomeEvent.SetBuffer(it)
-        } then2 onEvent
     )
 
     CurrencyModal(
@@ -437,6 +422,7 @@ private fun BoxWithConstraintsScope.PreviewHomeTab(isDark: Boolean = false) {
                 hideBalance = false,
                 hideIncome = false,
                 expanded = false,
+                savingsGoals = persistentListOf(),
                 shouldShowAccountSpecificColorInTransactions = false
             ),
             onEvent = {}

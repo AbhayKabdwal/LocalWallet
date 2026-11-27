@@ -72,6 +72,22 @@ object ThemeAccents {
     var orangeAlt by mutableStateOf(Color(0xFFF2CD9E))
         private set
 
+    /**
+     * Text and icon colours for content sitting *on top of* an accent.
+     *
+     * The legacy UI writes white onto its accent-filled cards as a constant,
+     * which only holds while the accent stays dark. A pale income colour - and
+     * the palette lets the user pick one - turns white text invisible. These
+     * are contrast-picked against the accent they will sit on, so a card
+     * follows the palette without becoming unreadable at either extreme.
+     */
+    var onGreen by mutableStateOf(Color(0xFFFAFAFC))
+        private set
+    var onRed by mutableStateOf(Color(0xFFFAFAFC))
+        private set
+    var onPrimary by mutableStateOf(Color(0xFFFAFAFC))
+        private set
+
     fun update(colors: ResolvedColors) {
         primary = colors.primary.primary
         primaryLight = colors.primary.extraLight
@@ -97,5 +113,9 @@ object ThemeAccents {
         blue = colors.secondary.primary
         blueLight = colors.secondary.extraLight
         blueDark = colors.secondary.extraDark
+
+        onGreen = colors.onIncome
+        onRed = colors.onExpense
+        onPrimary = colors.onPrimary
     }
 }

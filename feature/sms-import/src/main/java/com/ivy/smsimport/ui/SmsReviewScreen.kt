@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,12 +42,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import com.ivy.navigation.SmsFormatsScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.smsimport.domain.ScanMessagesUseCase
+import com.ivy.smsimport.notifications.BankNotificationListener
 import java.util.UUID
 
 @Composable
@@ -94,7 +100,8 @@ private fun SmsReviewUi(
                 .padding(horizontal = 16.dp),
         ) {
             when {
-                !state.permissionGranted -> PermissionRationale(onEvent)
+                !state.permissionGranted && !state.notificationSourceOn ->
+                    SourceSetup(state = state, onEvent = onEvent)
                 state.scanning && state.current == null -> Loading()
                 state.current == null -> Empty(state = state, onEvent = onEvent)
                 else -> ReviewCard(state = state, onEvent = onEvent)
@@ -104,38 +111,123 @@ private fun SmsReviewUi(
 }
 
 /**
- * Shown before the system dialog, so the user knows exactly what is read and
- * that nothing leaves the phone. The permission is only requested when they
- * actually open this screen.
+ * How the app gets hold of bank messages, with the cheaper option first.
+ *
+ * Reading notifications and reading the SMS inbox solve different halves of
+ * the problem: notifications catch everything from now on without a
+ * restricted permission, while `READ_SMS` is the only thing that can reach
+ * messages that arrived before today. Presenting them as one "grant access"
+ * step would hide that, and would ask for the heavier permission from people
+ * who do not need it.
  */
 @Composable
-private fun PermissionRationale(onEvent: (SmsReviewEvent) -> Unit) {
-    val launcher = rememberLauncherForActivityResult(
+private fun SourceSetup(
+    state: SmsReviewState,
+    onEvent: (SmsReviewEvent) -> Unit,
+) {
+    val context = LocalContext.current
+    val smsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) onEvent(SmsReviewEvent.PermissionGranted)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Coming back from the system settings screen is the only moment the
+    // grant can have changed, and there is no callback for it.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                onEvent(SmsReviewEvent.RefreshNotificationAccess)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Spacer(Modifier.height(24.dp))
-        Text("Import from your messages", style = MaterialTheme.typography.headlineSmall)
+        Text("Find transactions automatically", style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = "Ivy can read the bank messages already on this phone and " +
-                "suggest transactions from them, one at a time.",
+            text = "Your bank already tells you about every payment. The app can " +
+                "read those alerts and offer them as transactions, one at a time.",
             style = MaterialTheme.typography.bodyMedium,
         )
-        Text(
-            text = "• Messages are read and parsed entirely on this device\n" +
-                "• Nothing is uploaded, and the app has no internet permission\n" +
-                "• Message text is discarded as soon as you decide\n" +
-                "• One-time passwords are never read as transactions",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = { launcher.launch(Manifest.permission.READ_SMS) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Allow reading messages") }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "From notifications",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Recommended. Reads bank alerts as they arrive, including " +
+                        "from bank and UPI apps. No access to your message history, " +
+                        "and none of the restricted permissions Android warns about.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = "It only sees alerts that arrive after you switch it on.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = {
+                        onEvent(SmsReviewEvent.SetNotificationSource(true))
+                        context.startActivity(BankNotificationListener.settingsIntent())
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Turn on and open settings") }
+
+                if (state.notificationSourceOn && !state.notificationAccessGranted) {
+                    Text(
+                        text = "Switched on here, but Android has not granted " +
+                            "notification access yet - find LocalWallet in that list " +
+                            "and enable it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "From messages already on this phone",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Optional, and the only way to import past transactions. " +
+                        "This is a restricted Android permission, so the prompt is " +
+                        "a blunt one: it asks for your whole inbox.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = "• Messages are read and parsed entirely on this device\n" +
+                        "• Nothing is uploaded, and the app has no internet permission\n" +
+                        "• Message text is discarded as soon as you decide\n" +
+                        "• One-time passwords are never read as transactions",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedButton(
+                    onClick = { smsLauncher.launch(Manifest.permission.READ_SMS) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Allow reading messages") }
+            }
+        }
+        Spacer(Modifier.height(32.dp))
     }
 }
 

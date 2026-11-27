@@ -35,6 +35,10 @@ data class BalanceDrift(
 @Immutable
 data class SmsReviewState(
     val permissionGranted: Boolean,
+    /** Whether the user has switched on reading bank alerts from notifications. */
+    val notificationSourceOn: Boolean,
+    /** Whether Android has actually granted notification access. */
+    val notificationAccessGranted: Boolean,
     val scanning: Boolean,
     val current: SmsPendingEntity?,
     val remaining: Int,
@@ -66,6 +70,12 @@ sealed interface SmsReviewEvent {
     data object IgnoreSender : SmsReviewEvent
     data object AddAllHighConfidence : SmsReviewEvent
     data object DismissError : SmsReviewEvent
+
+    /** Turn reading bank alerts from notifications on or off. */
+    data class SetNotificationSource(val enabled: Boolean) : SmsReviewEvent
+
+    /** Re-check the system grant after returning from Android settings. */
+    data object RefreshNotificationAccess : SmsReviewEvent
 
     /** Write the gap between the wallet and the bank off as one transaction. */
     data class ApplyBalance(

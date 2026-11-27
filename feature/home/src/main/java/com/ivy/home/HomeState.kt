@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.TransactionHistoryItem
 import com.ivy.home.customerjourney.CustomerJourneyCardModel
+import com.ivy.home.savings.SavingsGoalUi
 import com.ivy.legacy.data.AppBaseData
 import com.ivy.legacy.data.BufferInfo
 import com.ivy.legacy.data.LegacyDueSection
@@ -26,6 +27,7 @@ data class HomeState(
     val balance: BigDecimal,
 
     val buffer: BufferInfo,
+    val savingsGoals: ImmutableList<SavingsGoalUi>,
 
     val upcoming: LegacyDueSection,
     val overdue: LegacyDueSection,

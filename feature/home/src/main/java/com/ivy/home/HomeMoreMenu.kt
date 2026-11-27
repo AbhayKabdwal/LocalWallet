@@ -74,7 +74,11 @@ import com.ivy.navigation.SettingsScreen
 import com.ivy.navigation.navigation
 import com.ivy.ui.R
 import com.ivy.wallet.ui.theme.Gray
-import com.ivy.wallet.ui.theme.components.BufferBattery
+import com.ivy.home.savings.SavingsGoalEvent
+import com.ivy.home.savings.SavingsGoalUi
+import com.ivy.home.savings.SavingsGoalsSection
+import com.ivy.home.savings.SavingsGoalsState
+import kotlinx.collections.immutable.persistentListOf
 import com.ivy.wallet.ui.theme.components.CircleButtonFilled
 import com.ivy.wallet.ui.theme.components.IvyIcon
 import com.ivy.wallet.ui.theme.modal.AddModalBackHandling
@@ -89,14 +93,15 @@ fun BoxWithConstraintsScope.MoreMenu(
     expanded: Boolean,
 
     balance: Double,
-    buffer: Double,
     currency: String,
     theme: Theme,
 
+    savingsGoals: SavingsGoalsState,
+
     setExpanded: (Boolean) -> Unit,
     onSwitchTheme: () -> Unit,
-    onBufferClick: () -> Unit,
     onCurrencyClick: () -> Unit,
+    onSavingsGoalEvent: (SavingsGoalEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val ivyContext = ivyWalletCtx()
@@ -188,10 +193,10 @@ fun BoxWithConstraintsScope.MoreMenu(
                 theme = theme,
                 onSwitchTheme = onSwitchTheme,
                 balance = balance,
-                buffer = buffer,
                 currency = currency,
-                onBufferClick = onBufferClick,
-                onCurrencyClick = onCurrencyClick
+                savingsGoals = savingsGoals,
+                onCurrencyClick = onCurrencyClick,
+                onSavingsGoalEvent = onSavingsGoalEvent
             )
         }
     }
@@ -223,13 +228,13 @@ fun BoxWithConstraintsScope.MoreMenu(
 @Composable
 private fun ColumnScope.Content(
     balance: Double,
-    buffer: Double,
     currency: String,
     theme: Theme,
+    savingsGoals: SavingsGoalsState,
 
     onSwitchTheme: () -> Unit,
-    onBufferClick: () -> Unit,
     onCurrencyClick: () -> Unit,
+    onSavingsGoalEvent: (SavingsGoalEvent) -> Unit,
 ) {
     Spacer(Modifier.height(24.dp))
 
@@ -249,11 +254,11 @@ private fun ColumnScope.Content(
 
     Spacer(Modifier.height(40.dp))
 
-    Buffer(
-        buffer = buffer,
-        currency = currency,
-        balance = balance,
-        onBufferClick = onBufferClick
+    // Replaces the single savings-goal figure. One number could not say how
+    // far along any individual thing the user is saving for actually is.
+    SavingsGoalsSection(
+        state = savingsGoals,
+        onEvent = onSavingsGoalEvent,
     )
 
     Spacer(Modifier.weight(1f))
@@ -293,55 +298,6 @@ private fun SearchButton(
         )
 
         Spacer(Modifier.width(16.dp))
-    }
-}
-
-@Composable
-private fun ColumnScope.Buffer(
-    buffer: Double,
-    currency: String,
-    balance: Double,
-    onBufferClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickableNoIndication(rememberInteractionSource()) {
-                onBufferClick()
-            }
-            .testTag("savings_goal_row"),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(Modifier.width(24.dp))
-
-        Text(
-            text = stringResource(R.string.savings_goal),
-            style = UI.typo.b1.style(
-                color = UI.colors.pureInverse,
-                fontWeight = FontWeight.ExtraBold
-            )
-        )
-
-        Spacer(Modifier.weight(1f))
-
-        AmountCurrencyB1(
-            amount = buffer,
-            currency = currency,
-            amountFontWeight = FontWeight.ExtraBold
-        )
-
-        Spacer(Modifier.width(32.dp))
-    }
-
-    Spacer(Modifier.height(12.dp))
-
-    BufferBattery(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        buffer = buffer,
-        currency = currency,
-        balance = balance,
-    ) {
-        onBufferClick()
     }
 }
 
@@ -531,13 +487,31 @@ private fun BoxWithConstraintsScope.Preview_Expanded() {
         MoreMenu(
             expanded = true,
             balance = 7523.43,
-            buffer = 5000.0,
+            savingsGoals = SavingsGoalsState(
+                goals = persistentListOf(
+                    SavingsGoalUi(
+                        id = UUID.randomUUID(),
+                        name = "New phone",
+                        saved = 18000.0,
+                        target = 65000.0,
+                        currency = "INR",
+                    ),
+                    SavingsGoalUi(
+                        id = UUID.randomUUID(),
+                        name = "Monitor",
+                        saved = 12000.0,
+                        target = 12000.0,
+                        currency = "INR",
+                    ),
+                ),
+                currency = "INR",
+            ),
+            onSavingsGoalEvent = {},
             currency = "BGN",
             theme = Theme.LIGHT,
             setExpanded = {
             },
             onSwitchTheme = {},
-            onBufferClick = {},
             onCurrencyClick = {}
         )
     }
@@ -552,14 +526,32 @@ private fun BoxWithConstraintsScope.Preview() {
         MoreMenu(
             expanded = expanded,
             balance = 7523.43,
-            buffer = 5000.0,
+            savingsGoals = SavingsGoalsState(
+                goals = persistentListOf(
+                    SavingsGoalUi(
+                        id = UUID.randomUUID(),
+                        name = "New phone",
+                        saved = 18000.0,
+                        target = 65000.0,
+                        currency = "INR",
+                    ),
+                    SavingsGoalUi(
+                        id = UUID.randomUUID(),
+                        name = "Monitor",
+                        saved = 12000.0,
+                        target = 12000.0,
+                        currency = "INR",
+                    ),
+                ),
+                currency = "INR",
+            ),
+            onSavingsGoalEvent = {},
             currency = "BGN",
             theme = Theme.LIGHT,
             setExpanded = {
                 expanded = it
             },
             onSwitchTheme = {},
-            onBufferClick = {},
             onCurrencyClick = {}
         )
     }

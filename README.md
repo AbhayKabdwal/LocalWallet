@@ -19,6 +19,55 @@ some of the most revealing data you produce.
 LocalWallet takes the opposite position: the data never leaves the device, and the code is public
 so you can check that claim rather than trust it.
 
+## Why you might choose it
+
+- **Your data stays on your phone.** Not "encrypted in transit", not "anonymised" — it never
+  leaves. The app has no `INTERNET` permission, so this is a property of the build, not a promise.
+- **It fills itself in.** Your bank already tells you about every payment. LocalWallet reads those
+  alerts on-device and offers each as a transaction to accept or skip, so the ledger stays current
+  without you typing it.
+- **It handles your bank, not just the popular ones.** If your bank's wording is not recognised,
+  you show the app one real message, confirm the parts it marked, and it reads the rest from then
+  on. No waiting for a release.
+- **It tells you where the money went.** Savings rate, spend per day, biggest expense, and the few
+  categories that account for most of your spending.
+- **You choose how it looks.** Accent, income and expense colours by hex or preset, light / dark /
+  AMOLED, and a depth control. Every colour is contrast-checked so you cannot end up with text you
+  can't read.
+- **No account, no subscription, no ads, no upsell.** GPL-3.0, and the whole thing is in this repo.
+
+## Why you might not
+
+These are real, and you should weigh them before switching.
+
+- **It asks for access that looks alarming, and you have to decide if you believe us.** To read
+  bank alerts it needs *notification access*, which lets it see notifications from every app.
+  Optionally — only if you want to import transactions from *before* you installed it — it needs
+  `READ_SMS`, which Android classifies as restricted and which grants access to your whole inbox.
+  Those are broad permissions and Android is right to make them sound serious.
+
+  What the app actually does with them: it matches each message against bank patterns on the
+  device, shows you anything that looks like a transaction, and throws the text away as soon as
+  you decide. Nothing is uploaded, because there is nothing to upload *to* — the app has no
+  network permission at all. You do not have to take that on faith:
+
+  ```bash
+  aapt dump permissions LocalWallet-*.apk | grep -i internet   # expect no output
+  ```
+
+  Both are optional. Skip them and the app is an ordinary manual expense tracker.
+
+- **There is no sync and no cloud backup.** One phone, one copy. Lose the phone without an export
+  and the data is gone. Export to CSV regularly — the app will not do it for you.
+- **Android only.** No iOS, no web, no desktop, and no plans for any.
+- **No Play Store, so no automatic updates.** You sideload the APK and check back for releases
+  yourself.
+- **The message parser is not magic.** It is tuned to refuse anything ambiguous, which means it
+  will sometimes miss a transaction rather than guess. Notification reading also cannot see
+  anything that arrived before you switched it on.
+- **One maintainer, on a fork of a discontinued app.** Ivy Apps stopped work on the original in
+  November 2024. If that matters for something you rely on daily, it should factor in.
+
 ## What it does
 
 **Tracks money, properly.** Accounts in multiple currencies, categories, budgets, planned and
@@ -33,10 +82,29 @@ your colours. Palettes export to a short string you can share.
 Every colour you choose is contrast-checked against the surface it lands on, so a pale accent
 cannot leave you with text you can't read.
 
-**Reads your bank SMS, on the device.** Optional and off by default. When enabled, LocalWallet
-scans the bank messages already on your phone, parses them locally, and shows each one as a card
-you accept, edit or skip. It learns which account a card number belongs to and which category a
-merchant goes in, so reviewing gets faster each week.
+**Reads your bank alerts, on the device.** Optional and off by default, from either of two
+sources. *Notification access* is the recommended one: it picks up bank alerts as they arrive,
+including from bank and UPI apps, and needs none of Android's restricted permissions. *SMS access*
+is the other, and the only way to import messages that arrived before you installed the app.
+
+Either way the message is parsed locally and shown as a card you accept, edit or skip. The app
+learns which account a card number belongs to and which category a merchant goes in, so reviewing
+gets faster each week. The same transaction arriving by both routes is recognised and offered
+once.
+
+**Learns your bank's wording.** If a format is not recognised, open *Settings → Message formats →
+Teach a new format*, pick one of the messages it could not read, and confirm the parts it marked
+as the amount, account and balance. It reads that format from then on.
+
+**Checks the app against your bank.** Most bank messages state a balance. When your review queue
+is empty, LocalWallet compares that figure with what its own transactions add up to and offers to
+write the difference off as a single, visible, deletable adjustment.
+
+**Saves for several things at once.** Savings goals in the home menu — a phone, a monitor — each
+with its own target and progress, instead of one lump figure for everything.
+
+**Reminds you about planned payments.** A notification on the morning a planned payment is due,
+so the reminder reaches you rather than waiting inside the app.
 
 It is deliberately cautious about what it treats as a transaction. One-time passwords, promotions,
 balance notifications, bill reminders, failed and reversed payments, and UPI collect requests are
@@ -56,6 +124,7 @@ card so you can check the parser got it right.
 | Accounts or cloud sync | none |
 | Identifiers | none generated or stored |
 | Where data lives | a database in the app's private storage |
+| Notification access | optional, off by default, read-only, never uploaded |
 | SMS access | optional, off by default, read-only, never uploaded |
 
 Verify the network claim on the APK you are about to install:
@@ -73,8 +142,9 @@ Full detail in [PRIVACY.md](PRIVACY.md).
 Grab the APK from [Releases](https://github.com/AbhayKabdwal/LocalWallet/releases) and open it on
 your phone. Android will ask you to allow installs from this source.
 
-There is no Play Store listing. The SMS feature needs `READ_SMS`, which Play only permits under a
-reviewed exception, and the point of this app is to not depend on that.
+There is no Play Store listing. Optional SMS import needs `READ_SMS`, which Play only permits
+under a reviewed exception, and the point of this app is to not depend on that. Reading bank
+alerts through notification access carries no such restriction, which is why it is the default.
 
 ## Importing your data
 

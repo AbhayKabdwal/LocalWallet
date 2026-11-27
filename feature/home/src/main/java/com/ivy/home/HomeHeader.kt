@@ -53,9 +53,11 @@ import com.ivy.navigation.navigation
 import com.ivy.ui.R
 import com.ivy.wallet.ui.theme.Gradient
 import com.ivy.wallet.ui.theme.GradientGreen
+import com.ivy.wallet.ui.theme.GradientRed
 import com.ivy.wallet.ui.theme.Gray
 import com.ivy.wallet.ui.theme.Green
-import com.ivy.wallet.ui.theme.White
+import com.ivy.wallet.ui.theme.OnGreen
+import com.ivy.wallet.ui.theme.OnRed
 import com.ivy.wallet.ui.theme.components.BalanceRow
 import com.ivy.wallet.ui.theme.components.BalanceRowMini
 import com.ivy.wallet.ui.theme.components.IvyIcon
@@ -311,7 +313,10 @@ private fun IncomeExpenses(
             percentVisible = percentExpanded,
             icon = R.drawable.ic_income,
             backgroundGradient = GradientGreen,
-            textColor = White,
+            // Contrast-picked against the income colour rather than a constant
+            // white: the palette allows a pale income accent, and white text
+            // on it was unreadable.
+            textColor = OnGreen,
             label = stringResource(R.string.income),
             currency = currency,
             amount = monthlyIncome,
@@ -333,8 +338,12 @@ private fun IncomeExpenses(
         HeaderCard(
             percentVisible = percentExpanded,
             icon = R.drawable.ic_expense,
-            backgroundGradient = Gradient(UI.colors.pureInverse, UI.colors.gray),
-            textColor = UI.colors.pure,
+            // Was a black-to-grey gradient, which tracked light/dark but
+            // ignored the palette completely - so the expense colour the user
+            // picked had no effect on the one card that is entirely about
+            // expenses. It now uses that colour, like its income counterpart.
+            backgroundGradient = GradientRed,
+            textColor = OnRed,
             label = stringResource(R.string.expenses),
             currency = currency,
             amount = monthlyExpenses.absoluteValue,

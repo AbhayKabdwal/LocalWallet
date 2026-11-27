@@ -98,6 +98,19 @@ val GradientOrangeRevert: Gradient get() = Gradient(ThemeAccents.orangeAlt, Oran
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val GradientIvy: Gradient get() = Gradient(Ivy, ThemeAccents.primaryAlt)
 
+/**
+ * Content colours for the accent-filled cards.
+ *
+ * Getters, not constants: the whole reason the themed cards looked wrong is
+ * that a `val` reading a themed colour captures it once at class
+ * initialisation and never sees the palette change again.
+ */
+val OnGreen: Color get() = ThemeAccents.onGreen
+
+val OnRed: Color get() = ThemeAccents.onRed
+
+val OnIvy: Color get() = ThemeAccents.onPrimary
+
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 fun Modifier.gradientCutBackgroundTop(
     pure: Color,

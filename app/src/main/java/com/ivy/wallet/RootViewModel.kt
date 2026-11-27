@@ -22,6 +22,7 @@ import com.ivy.navigation.MainScreen
 import com.ivy.navigation.Navigation
 import com.ivy.navigation.OnboardingScreen
 import com.ivy.ui.R
+import com.ivy.wallet.domain.deprecated.logic.notification.PlannedPaymentReminderLogic
 import com.ivy.wallet.domain.deprecated.logic.notification.TransactionReminderLogic
 import com.ivy.wallet.migrations.MigrationsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,6 +45,7 @@ class RootViewModel @Inject constructor(
     private val settingsDao: SettingsDao,
     private val sharedPrefs: SharedPrefs,
     private val transactionReminderLogic: TransactionReminderLogic,
+    private val plannedPaymentReminderLogic: PlannedPaymentReminderLogic,
     private val migrationsManager: MigrationsManager,
     private val legalRepo: LegalRepository,
     themeRepository: ThemeRepository,
@@ -113,6 +115,7 @@ class RootViewModel @Inject constructor(
         if (!handleSpecialStart(intent)) {
             nav.navigateTo(MainScreen)
             transactionReminderLogic.scheduleReminder()
+            plannedPaymentReminderLogic.scheduleReminder()
         }
     }
 

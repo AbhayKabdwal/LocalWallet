@@ -9,6 +9,7 @@ import com.ivy.data.db.dao.read.ExchangeRatesDao
 import com.ivy.data.db.dao.read.LoanDao
 import com.ivy.data.db.dao.read.LoanRecordDao
 import com.ivy.data.db.dao.read.PlannedPaymentRuleDao
+import com.ivy.data.db.dao.read.SavingsGoalDao
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.data.db.dao.read.TagAssociationDao
 import com.ivy.data.db.dao.read.TagDao
@@ -21,6 +22,7 @@ import com.ivy.data.db.dao.write.WriteExchangeRatesDao
 import com.ivy.data.db.dao.write.WriteLoanDao
 import com.ivy.data.db.dao.write.WriteLoanRecordDao
 import com.ivy.data.db.dao.write.WritePlannedPaymentRuleDao
+import com.ivy.data.db.dao.write.WriteSavingsGoalDao
 import com.ivy.data.db.dao.write.WriteSettingsDao
 import com.ivy.data.db.dao.write.WriteTagAssociationDao
 import com.ivy.data.db.dao.write.WriteTagDao
@@ -74,6 +76,16 @@ object RoomDbModule {
     @Provides
     fun provideSettingsDao(db: IvyRoomDatabase): SettingsDao {
         return db.settingsDao
+    }
+
+    @Provides
+    fun provideSavingsGoalDao(db: IvyRoomDatabase): SavingsGoalDao {
+        return db.savingsGoalDao
+    }
+
+    @Provides
+    fun provideWriteSavingsGoalDao(db: IvyRoomDatabase): WriteSavingsGoalDao {
+        return db.writeSavingsGoalDao
     }
 
     @Provides
