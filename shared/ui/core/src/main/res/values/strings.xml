@@ -466,6 +466,8 @@
     <string name="sync_from_messages">Sync from messages</string>
     <string name="import_from_messages">Import from messages</string>
     <string name="message_formats">Message formats</string>
+    <string name="read_bank_notifications">LocalWallet bank alerts</string>
+    <string name="message_sync_widget">Sync from messages</string>
     <string name="review_sms_transactions">Review transactions found in your messages</string>
     <string name="attributions">Attributions</string>
     <string name="icons">Icons</string>

@@ -190,8 +190,17 @@ val MediumWhite = Color(0xFFEFEEF0)
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 val Transparent = Color(0x00000000)
 
+/**
+ * A getter, not a `val`.
+ *
+ * As a `val` this was evaluated once when the class loaded, capturing whatever
+ * `Green` happened to be at the time and keeping it for the life of the
+ * process - so a screen painted with it ignored every later palette change.
+ * The second stop was a hardcoded mint, which meant even a correct start
+ * colour blended into something that was not in the user's palette.
+ */
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
-val GradientGreen = Gradient(Green, Color(0xFF49F2C8))
+val GradientGreen: Gradient get() = Gradient(Green, ThemeAccents.greenAlt)
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 @Immutable

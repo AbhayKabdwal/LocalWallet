@@ -4,6 +4,7 @@ import com.ivy.base.legacy.TransactionHistoryItem
 import com.ivy.data.model.Category
 import com.ivy.data.model.Tag
 import com.ivy.legacy.datamodel.Account
+import com.ivy.reports.analysis.SpendingInsights
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import java.util.*
@@ -13,6 +14,7 @@ data class ReportScreenState(
     val baseCurrency: String = "",
     val balance: Double = 0.0,
     val income: Double = 0.0,
+    val insights: SpendingInsights? = null,
     val expenses: Double = 0.0,
     val upcomingIncome: Double = 0.0,
     val upcomingExpenses: Double = 0.0,

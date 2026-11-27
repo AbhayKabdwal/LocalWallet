@@ -17,6 +17,9 @@ sealed interface HomeEvent {
 
     data class SetBuffer(val buffer: Double) : HomeEvent
 
+    /** Create, top up, change or remove one of the user's savings goals. */
+    data class SavingsGoal(val event: com.ivy.home.savings.SavingsGoalEvent) : HomeEvent
+
     data class SetCurrency(val currency: String) : HomeEvent
 
     data class SetPeriod(val period: TimePeriod) : HomeEvent

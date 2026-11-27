@@ -41,6 +41,7 @@ import com.ivy.legacy.data.AppBaseData
 import com.ivy.legacy.data.LegacyDueSection
 import com.ivy.legacy.datamodel.Account
 import com.ivy.legacy.ui.component.IncomeExpensesCards
+import com.ivy.reports.analysis.SpendingInsightsCard
 import com.ivy.legacy.ui.component.transaction.TransactionsDividerLine
 import com.ivy.legacy.ui.component.transaction.transactions
 import com.ivy.legacy.utils.clickableNoIndication
@@ -215,6 +216,17 @@ private fun BoxWithConstraintsScope.UI(
                 }
             } else {
                 Spacer(Modifier.height(32.dp))
+            }
+
+            // Above the transaction list, below the totals: the reading of
+            // the numbers belongs next to the numbers, not buried under a
+            // scroll of individual rows.
+            state.insights?.let { insights ->
+                SpendingInsightsCard(
+                    insights = insights,
+                    currency = state.baseCurrency,
+                )
+                Spacer(Modifier.height(16.dp))
             }
 
             TransactionsDividerLine(

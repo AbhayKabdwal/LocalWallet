@@ -1,0 +1,19 @@
+plugins {
+    id("ivy.widget")
+}
+
+android {
+    namespace = "com.ivy.widget.messagesync"
+}
+
+dependencies {
+    implementation(projects.shared.base)
+    implementation(projects.shared.domain)
+    implementation(projects.shared.ui.core)
+    implementation(projects.shared.ui.navigation)
+
+    implementation(projects.feature.smsImport)
+    implementation(projects.temp.oldDesign)
+    implementation(projects.widget.sharedBase)
+    implementation(projects.temp.legacyCode)
+}

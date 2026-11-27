@@ -1,6 +1,7 @@
 package com.ivy.home
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -21,6 +22,9 @@ import com.ivy.frp.then
 import com.ivy.frp.thenInvokeAfter
 import com.ivy.home.customerjourney.CustomerJourneyCardModel
 import com.ivy.home.customerjourney.CustomerJourneyCardsProvider
+import com.ivy.home.savings.SavingsGoalEvent
+import com.ivy.home.savings.SavingsGoalRepository
+import com.ivy.home.savings.SavingsGoalUi
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.data.AppBaseData
 import com.ivy.legacy.data.BufferInfo
@@ -90,7 +94,8 @@ class HomeViewModel @Inject constructor(
     private val transactionMapper: TransactionMapper,
     private val timeProvider: TimeProvider,
     private val timeConverter: TimeConverter,
-    private val features: Features
+    private val features: Features,
+    private val savingsGoalRepository: SavingsGoalRepository
 ) : ComposeViewModel<HomeState, HomeEvent>() {
     private var currentTheme by mutableStateOf(Theme.AUTO)
     private var name by mutableStateOf("")
@@ -146,6 +151,7 @@ class HomeViewModel @Inject constructor(
             stats = getStats(),
             balance = getBalance(),
             buffer = getBuffer(),
+            savingsGoals = getSavingsGoals(),
             upcoming = getUpcoming(),
             overdue = getOverdue(),
             customerJourneyCards = getCustomerJourneyCards(),
@@ -231,6 +237,42 @@ class HomeViewModel @Inject constructor(
         return hideIncome
     }
 
+    /**
+     * Collected rather than loaded once: the goals are edited from the same
+     * menu that displays them, so a one-shot read would leave a stale figure
+     * on screen right after the user topped a goal up.
+     */
+    @Composable
+    private fun getSavingsGoals(): ImmutableList<SavingsGoalUi> {
+        val goals by savingsGoalRepository
+            .uiGoals(baseData.baseCurrency)
+            .collectAsState(initial = emptyList())
+        return goals.toImmutableList()
+    }
+
+    private suspend fun onSavingsGoalEvent(event: SavingsGoalEvent) {
+        when (event) {
+            is SavingsGoalEvent.Add -> savingsGoalRepository.add(
+                name = event.name,
+                target = event.target,
+                saved = event.saved,
+                currency = null,
+            )
+
+            is SavingsGoalEvent.Contribute ->
+                savingsGoalRepository.contribute(event.id, event.amount)
+
+            is SavingsGoalEvent.Edit -> savingsGoalRepository.edit(
+                id = event.id,
+                name = event.name,
+                target = event.target,
+                saved = event.saved,
+            )
+
+            is SavingsGoalEvent.Delete -> savingsGoalRepository.delete(event.id)
+        }
+    }
+
     override fun onEvent(event: HomeEvent) {
         viewModelScope.launch {
             when (event) {
@@ -246,6 +288,7 @@ class HomeViewModel @Inject constructor(
                 is HomeEvent.SetUpcomingExpanded -> setUpcomingExpanded(event.expanded)
                 is HomeEvent.SetOverdueExpanded -> setOverdueExpanded(event.expanded)
                 is HomeEvent.SetBuffer -> setBuffer(event.buffer)
+                is HomeEvent.SavingsGoal -> onSavingsGoalEvent(event.event)
                 is HomeEvent.SetCurrency -> setCurrency(event.currency).fixUnit()
                 HomeEvent.SwitchTheme -> switchTheme()
                 is HomeEvent.DismissCustomerJourneyCard -> dismissCustomerJourneyCard(event.card)

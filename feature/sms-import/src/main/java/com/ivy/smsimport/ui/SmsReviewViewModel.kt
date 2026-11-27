@@ -19,6 +19,8 @@ import com.ivy.smsimport.domain.BalanceCheckUseCase
 import com.ivy.smsimport.domain.CommitSmsTransactionUseCase
 import com.ivy.smsimport.domain.CommitSmsTransactionUseCase.Companion.merchantKey
 import com.ivy.smsimport.domain.ScanMessagesUseCase
+import com.ivy.smsimport.notifications.BankNotificationListener
+import com.ivy.smsimport.notifications.NotificationSourceSettings
 import com.ivy.ui.ComposeViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -42,6 +44,9 @@ class SmsReviewViewModel @Inject constructor(
     private val scanMessages: ScanMessagesUseCase,
     private val commit: CommitSmsTransactionUseCase,
     private val balanceCheck: BalanceCheckUseCase,
+    private val notificationSource: NotificationSourceSettings,
+    @dagger.hilt.android.qualifiers.ApplicationContext
+    private val appContext: android.content.Context,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
 ) : ComposeViewModel<SmsReviewState, SmsReviewEvent>() {
@@ -50,6 +55,10 @@ class SmsReviewViewModel @Inject constructor(
     private var reviewed by mutableIntStateOf(0)
     private var error by mutableStateOf<String?>(null)
     private var permissionGranted by mutableStateOf(inbox.hasPermission())
+    private var notificationSourceOn by mutableStateOf(false)
+    private var notificationAccessGranted by mutableStateOf(
+        BankNotificationListener.isGranted(appContext),
+    )
 
     private var accounts by mutableStateOf<ImmutableList<AccountOption>>(persistentListOf())
     private var categories by mutableStateOf<ImmutableList<CategoryOption>>(persistentListOf())
@@ -64,6 +73,7 @@ class SmsReviewViewModel @Inject constructor(
 
     init {
         loadPickerOptions()
+        loadNotificationSource()
         // Opening this screen is an explicit request to sync, so scan straight
         // away when the permission is already granted instead of waiting for
         // the user to find a "Scan now" button.
@@ -89,6 +99,8 @@ class SmsReviewViewModel @Inject constructor(
 
         return SmsReviewState(
             permissionGranted = permissionGranted,
+            notificationSourceOn = notificationSourceOn,
+            notificationAccessGranted = notificationAccessGranted,
             scanning = scanning,
             current = current,
             remaining = pending.size,
@@ -138,6 +150,10 @@ class SmsReviewViewModel @Inject constructor(
             SmsReviewEvent.IgnoreSender -> ignoreSender()
             SmsReviewEvent.AddAllHighConfidence -> addAllHighConfidence()
             SmsReviewEvent.DismissError -> error = null
+            is SmsReviewEvent.SetNotificationSource -> setNotificationSource(event.enabled)
+            SmsReviewEvent.RefreshNotificationAccess -> {
+                notificationAccessGranted = BankNotificationListener.isGranted(appContext)
+            }
         }
     }
 
@@ -212,6 +228,20 @@ class SmsReviewViewModel @Inject constructor(
                     ),
                 ).onRight { reviewed++ }
             }
+        }
+    }
+
+    private fun loadNotificationSource() {
+        viewModelScope.launch {
+            notificationSourceOn = notificationSource.enabled()
+        }
+    }
+
+    private fun setNotificationSource(enabled: Boolean) {
+        viewModelScope.launch {
+            notificationSource.setEnabled(enabled)
+            notificationSourceOn = enabled
+            notificationAccessGranted = BankNotificationListener.isGranted(appContext)
         }
     }
 

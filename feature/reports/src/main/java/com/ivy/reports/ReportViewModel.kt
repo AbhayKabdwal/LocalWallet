@@ -24,6 +24,9 @@ import com.ivy.data.model.Tag
 import com.ivy.data.model.Transaction
 import com.ivy.data.model.TransactionId
 import com.ivy.data.model.Transfer
+import com.ivy.reports.analysis.SpendRow
+import com.ivy.reports.analysis.SpendingInsights
+import com.ivy.reports.analysis.SpendingInsightsCalculator
 import com.ivy.data.model.primitive.ColorInt
 import com.ivy.data.model.primitive.NotBlankTrimmedString
 import com.ivy.data.repository.CategoryRepository
@@ -69,6 +72,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
+import java.time.Duration
 import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
@@ -105,6 +109,7 @@ class ReportViewModel @Inject constructor(
     private var historyIncomeExpense by mutableStateOf(IncomeExpenseTransferPair.zero())
     private var filter by mutableStateOf<ReportFilter?>(null)
     private var balance by mutableDoubleStateOf(0.0)
+    private var insights by mutableStateOf<SpendingInsights?>(null)
     private var income by mutableDoubleStateOf(0.0)
     private var expenses by mutableDoubleStateOf(0.0)
     private var upcomingIncome by mutableDoubleStateOf(0.0)
@@ -152,6 +157,7 @@ class ReportViewModel @Inject constructor(
             filterOverlayVisible = filterOverlayVisible,
             history = history,
             income = income,
+            insights = insights,
             loading = loading,
             overdueExpanded = overdueExpanded,
             overdueExpenses = overdueExpenses,
@@ -218,8 +224,40 @@ class ReportViewModel @Inject constructor(
             categories =
                 (listOf(unSpecifiedCategory) + categoryRepository.findAll()).toImmutableList()
             allTags = tagRepository.findAll().toImmutableList()
+
+            // Open on the current month rather than on a screen of zeros.
+            //
+            // The filter starts null, and a null filter zeroes every figure
+            // here - so the report looked broken until the user found the
+            // filter overlay and ticked four separate lists. Nothing on the
+            // screen said that was required, which made "no analysis, just
+            // 0s" the normal first impression of the whole feature.
+            if (filter == null) {
+                setFilter(defaultFilter())
+            }
         }
     }
+
+    /**
+     * Everything, for the period the rest of the app is showing.
+     *
+     * Deliberately as wide as the filter allows: this is a starting point the
+     * user narrows down, so excluding anything here would silently hide data
+     * they never chose to hide.
+     */
+    private fun defaultFilter() = ReportFilter(
+        trnTypes = TransactionType.entries.toList(),
+        period = ivyContext.selectedPeriod,
+        accounts = accounts.toList(),
+        categories = categories.toList(),
+        currency = baseCurrency,
+        minAmount = null,
+        maxAmount = null,
+        includeKeywords = emptyList(),
+        excludeKeywords = emptyList(),
+        includedTags = emptyList(),
+        excludedTags = emptyList(),
+    )
 
     private suspend fun setFilter(reportFilter: ReportFilter?) {
         scopedIOThread { scope ->
@@ -313,6 +351,13 @@ class ReportViewModel @Inject constructor(
                     accounts = tempAccounts,
                     baseCurrency = baseCurrency
                 )
+            )
+
+            insights = buildInsights(
+                transactions = tempHistory,
+                accounts = tempAccounts,
+                baseCurrency = baseCurrency,
+                filter = reportFilter,
             )
 
             setReportValues(
@@ -520,6 +565,67 @@ class ReportViewModel @Inject constructor(
         return this.toLowerCaseLocal().contains(anotherString.toLowerCaseLocal())
     }
 
+    /**
+     * Reduces the filtered transactions to the few facts the insights need.
+     *
+     * Every amount is converted to the base currency first. A report can span
+     * accounts in different currencies, and summing those raw would produce
+     * confident, precise, wrong numbers - the worst kind for something whose
+     * whole job is telling the user where their money went.
+     */
+    private suspend fun buildInsights(
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        filter: ReportFilter,
+    ): SpendingInsights {
+        val categoryNames = categories.associate { it.id to it.name.value }
+
+        val rows = transactions.mapNotNull { trn ->
+            val isExpense = when (trn) {
+                is Expense -> true
+                is Income -> false
+                // A transfer moves money between the user's own accounts; it
+                // is not spending, and counting it as such would inflate every
+                // figure here for anyone who moves money around.
+                is Transfer -> return@mapNotNull null
+            }
+            val amount = exchangeAct(
+                ExchangeAct.Input(
+                    data = ExchangeData(
+                        baseCurrency = baseCurrency,
+                        fromCurrency = trnCurrency(trn, accounts, baseCurrency),
+                    ),
+                    amount = trn.getValue(),
+                ),
+            ).orZero().toDouble()
+
+            SpendRow(
+                amount = amount,
+                isExpense = isExpense,
+                categoryName = trn.category?.let { categoryNames[it] },
+                title = trn.title?.value,
+                dayIndex = trn.time.epochSecond / SECONDS_IN_DAY,
+            )
+        }
+
+        return SpendingInsightsCalculator.calculate(rows, days = periodDays(filter))
+    }
+
+    /**
+     * The length of the reported period in days, so the daily average means
+     * "per day of the period you asked about" rather than per day that
+     * happened to have a transaction on it.
+     */
+    private fun periodDays(filter: ReportFilter): Int {
+        val range = filter.period?.toRange(
+            ivyContext.startDayOfMonth,
+            timeConverter,
+            timeProvider,
+        ) ?: return 0
+        return Duration.between(range.from, range.to).toDays().toInt().coerceAtLeast(1)
+    }
+
     private fun calculateBalance(incomeExpenseTransferPair: IncomeExpenseTransferPair): BigDecimal {
         return incomeExpenseTransferPair.income + incomeExpenseTransferPair.transferIncome - incomeExpenseTransferPair.expense - incomeExpenseTransferPair.transferExpense
     }
@@ -645,5 +751,9 @@ class ReportViewModel @Inject constructor(
                 setFilter(filter)
             }
         }
+    }
+
+    companion object {
+        private const val SECONDS_IN_DAY = 86_400L
     }
 }
